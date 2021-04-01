@@ -1,4 +1,5 @@
-from muke.KeyPoint import KeyPoint
+from detector.KeyPoint import KeyPoint
+import numpy as np
 
 
 class BaseDetector(object):
@@ -8,5 +9,5 @@ class BaseDetector(object):
     def release(self):
         pass
 
-    def extract(self) -> [KeyPoint]:
+    def detect(self, image: np.ndarray) -> [KeyPoint]:
         pass

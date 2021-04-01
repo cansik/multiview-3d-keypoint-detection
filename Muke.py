@@ -3,7 +3,7 @@ import PIL.Image
 import trimesh
 import numpy as np
 
-from muke.BaseDetector import BaseDetector
+from detector.BaseDetector import BaseDetector
 
 
 class Muke(object):

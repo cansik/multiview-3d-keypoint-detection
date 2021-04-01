@@ -1,8 +1,7 @@
 import argparse
 
-from muke.BaseDetector import BaseDetector
-from muke.MediaPipePoseDetector import MediaPipePoseDetector
-from muke.Muke import Muke
+from detector.MediaPipePoseDetector import MediaPipePoseDetector
+from Muke import Muke
 
 detectors = {
     "media-pipe-pose": MediaPipePoseDetector()
