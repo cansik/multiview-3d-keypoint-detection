@@ -12,7 +12,7 @@ def main():
     with Muke(detectors[args.method],
               resolution=args.resolution,
               display=args.display) as muke:
-        results = muke.process(args.input, views=None)
+        results = muke.detect(args.input, views=[None])
         print(results)
 
 

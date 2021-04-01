@@ -44,8 +44,9 @@ class MediaPipeBaseDetector(BaseDetector):
         if landmarks is None:
             return keypoints
 
-        for landmark in landmarks.landmark:
+        for i, landmark in enumerate(landmarks.landmark):
             keypoints.append(KeyPoint(
+                i,
                 landmark.x,
                 landmark.y,
                 landmark.z,

@@ -1,7 +1,10 @@
+import io
+
 import PIL.Image
 
 import trimesh
 import numpy as np
+from PIL import Image
 
 from detector.BaseDetector import BaseDetector
 
@@ -19,7 +22,7 @@ class Muke(object):
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.detector.release()
 
-    def process(self, mesh_path: str, views):
+    def detect(self, mesh_path: str, views):
         mesh = trimesh.load(mesh_path)
 
         # setup scene
@@ -28,5 +31,24 @@ class Muke(object):
         scene.camera.fov = 50 * (scene.camera.resolution /
                                  scene.camera.resolution.max())
 
+        # could be running multi-processing
+        for view in views:
+            self._detect_view(scene, view)
+
         if self.display:
             scene.show()
+
+    def _detect_view(self, scene, view):
+        # offscreen render
+        data = scene.save_image(resolution=[self.resolution, self.resolution], visible=True)
+        png = Image.open(io.BytesIO(data))
+
+        # convert png to rgb
+        image = Image.new("RGB", png.size, (255, 255, 255))
+        image.paste(png, mask=png.split()[3])
+        image = np.array(image)
+
+        # detect keypoints
+        keypoints = self.detector.detect(image)
+        print(keypoints)
+
