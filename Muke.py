@@ -22,6 +22,7 @@ class Muke(object):
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.detector.release()
 
+    # todo: define the views input structure [(camera pose, relevant keypoints (weighted?))]
     def detect(self, mesh_path: str, views):
         mesh = trimesh.load(mesh_path)
 
@@ -35,6 +36,8 @@ class Muke(object):
         for view in views:
             self._detect_view(scene, view)
 
+            # todo: collect or outputs and use mean or average (see what's better)
+
         if self.display:
             scene.show()
 
@@ -43,12 +46,19 @@ class Muke(object):
         data = scene.save_image(resolution=[self.resolution, self.resolution], visible=True)
         png = Image.open(io.BytesIO(data))
 
-        # convert png to rgb
+        # convert png to rgb image
         image = Image.new("RGB", png.size, (255, 255, 255))
         image.paste(png, mask=png.split()[3])
         image = np.array(image)
 
         # detect keypoints
         keypoints = self.detector.detect(image)
-        print(keypoints)
+
+        # raycast
+        for kp in keypoints:
+            print(kp.x)
+
+            # todo: raycast each point
+            # todo: find corresponding vertex (calculate the delta)
+            # todo: return vertex mapping of kp index to vertex id's and delta
 
