@@ -18,6 +18,10 @@ class MediaPipeBaseDetector(BaseDetector):
     def create_model(self) -> SolutionBase:
         pass
 
+    @abstractmethod
+    def get_landmarks(self, results):
+        pass
+
     def setup(self):
         self.model = self.create_model()
 
@@ -32,5 +36,20 @@ class MediaPipeBaseDetector(BaseDetector):
         self.release()
 
     def detect(self, image: np.ndarray) -> [KeyPoint]:
-        print("mediapipe pose detection...")
-        return []
+        keypoints = []
+
+        results = self.model.process(image)
+        landmarks = self.get_landmarks(results)
+
+        if landmarks is None:
+            return keypoints
+
+        for landmark in landmarks.landmark:
+            keypoints.append(KeyPoint(
+                landmark.x,
+                landmark.y,
+                landmark.z,
+                landmark.visibility
+            ))
+
+        return keypoints
