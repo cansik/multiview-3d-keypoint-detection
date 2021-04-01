@@ -1,15 +1,31 @@
 import argparse
 
+from muke.BaseDetector import BaseDetector
+from muke.MediaPipePoseDetector import MediaPipePoseDetector
+from muke.Muke import Muke
+
+detectors = {
+    "media-pipe-pose": MediaPipePoseDetector()
+}
+
 
 def main():
-    pass
+    with Muke(detectors[args.method],
+              resolution=args.resolution,
+              display=args.display) as muke:
+        results = muke.process(args.input, views=None)
+        print(results)
 
 
 if __name__ == "__main__":
+    detection_methods = list(detectors.keys())
+
     parser = argparse.ArgumentParser(description='Detects keypoint locations in a 3d model.')
     parser.add_argument("input", help="Input mesh.")
-    parser.add_argument("--method", default="mp-pose", choices=["mp-pose", "mp-face"],
-                        help="Detection method.")
+    parser.add_argument("--method", default=detection_methods[0], choices=detection_methods,
+                        help="Detection methods [%s]." % (", ".join(detection_methods)))
+    parser.add_argument("--resolution", default=512, type=int, help="Render resolution for each view pass.")
+    parser.add_argument("--display", action='store_true', help="Shows debug frames and information.")
 
     args = parser.parse_args()
 
