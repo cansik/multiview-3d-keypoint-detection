@@ -1,10 +1,11 @@
+from abc import abstractmethod
+
+import mediapipe as mp
+import numpy as np
 from mediapipe.python.solution_base import SolutionBase
 
 from detector.BaseDetector import BaseDetector
 from detector.KeyPoint import KeyPoint
-
-import mediapipe as mp
-import numpy as np
 
 mp_drawing = mp.solutions.drawing_utils
 
@@ -13,6 +14,7 @@ class MediaPipeBaseDetector(BaseDetector):
     def __init__(self):
         self.model: SolutionBase = None
 
+    @abstractmethod
     def create_model(self) -> SolutionBase:
         pass
 
