@@ -8,7 +8,6 @@ mp_pose = mp.solutions.pose
 
 
 class MediaPipePoseDetector(MediaPipeBaseDetector):
-
     def create_model(self) -> SolutionBase:
         print("create pose model...")
         return mp_pose.Pose(static_image_mode=True)
