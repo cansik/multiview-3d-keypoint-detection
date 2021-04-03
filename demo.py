@@ -1,4 +1,6 @@
 import argparse
+import os
+import json
 
 from detector.MediaPipePoseDetector import MediaPipePoseDetector
 from Muke import Muke
@@ -15,7 +17,12 @@ def main():
               display=args.display,
               debug=args.debug) as muke:
         results = muke.detect(args.input, views=[DetectionView("Test")])
-        print(results)
+
+        # create txt file besides input mesh
+        keypoint_file_name = "%s_keypoints.txt" % os.path.splitext(args.input)[0]
+        output = json.dumps([{"x": kp.x, "y": kp.y, "z": kp.z} for kp in results])
+        with open(keypoint_file_name, "w") as file:
+            file.write(output)
 
 
 if __name__ == "__main__":

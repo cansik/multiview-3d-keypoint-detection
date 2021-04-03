@@ -28,7 +28,7 @@ class Muke(object):
         self.detector.release()
 
     # todo: define the views input structure [(camera pose, relevant keypoints (weighted?))]
-    def detect(self, mesh_path: str, views: [DetectionView]):
+    def detect(self, mesh_path: str, views: [DetectionView]) -> [KeyPoint3]:
         mesh = trimesh.load(mesh_path)
 
         # setup scene
@@ -73,6 +73,8 @@ class Muke(object):
         if self.display:
             self._annotate_keypoints_3d(scene, keypoints)
             scene.show()
+
+        return keypoints
 
     def _detect_view(self, scene, mesh, view: DetectionView) -> [KeyPoint3]:
         # offscreen renders
