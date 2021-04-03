@@ -2,12 +2,14 @@ import argparse
 import os
 import json
 
+from detector.MediaPipeFaceDetector import MediaPipeFaceDetector
 from detector.MediaPipePoseDetector import MediaPipePoseDetector
 from Muke import Muke
 from lib.DetectionView import DetectionView
 
 detectors = {
-    "media-pipe-pose": MediaPipePoseDetector()
+    "media-pipe-pose": MediaPipePoseDetector(),
+    "media-pipe-face": MediaPipeFaceDetector()
 }
 
 
