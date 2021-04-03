@@ -6,6 +6,7 @@ from PIL import Image, ImageDraw
 
 from detector.BaseDetector import BaseDetector
 from detector.KeyPoint import KeyPoint
+from lib.DetectionView import DetectionView
 
 
 class Muke(object):
@@ -23,7 +24,7 @@ class Muke(object):
         self.detector.release()
 
     # todo: define the views input structure [(camera pose, relevant keypoints (weighted?))]
-    def detect(self, mesh_path: str, views):
+    def detect(self, mesh_path: str, views: [DetectionView]):
         mesh = trimesh.load(mesh_path)
 
         # setup scene
@@ -41,7 +42,7 @@ class Muke(object):
         if self.display:
             scene.show()
 
-    def _detect_view(self, scene, view):
+    def _detect_view(self, scene, view: DetectionView):
         # offscreen renders
         data = scene.save_image(visible=True)
         png = Image.open(io.BytesIO(data))
@@ -57,7 +58,7 @@ class Muke(object):
         # annotate
         if self.display:
             self._annotate(image, keypoints)
-            image.show("Key Points")
+            image.show("%s: Key Points" % view.name)
 
         # get camera rays
         origins, vectors, pixels = scene.camera_rays()

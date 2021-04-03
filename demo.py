@@ -2,6 +2,7 @@ import argparse
 
 from detector.MediaPipePoseDetector import MediaPipePoseDetector
 from Muke import Muke
+from lib.DetectionView import DetectionView
 
 detectors = {
     "media-pipe-pose": MediaPipePoseDetector()
@@ -12,7 +13,7 @@ def main():
     with Muke(detectors[args.method],
               resolution=args.resolution,
               display=args.display) as muke:
-        results = muke.detect(args.input, views=[None])
+        results = muke.detect(args.input, views=[DetectionView("Test")])
         print(results)
 
 
