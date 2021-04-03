@@ -51,6 +51,7 @@ class Muke(object):
         # combine detections
         query = trimesh.proximity.ProximityQuery(mesh)
         keypoints = []
+        summed_error = 0.0
         for index in sorted(detections.keys()):
             positions = np.array([[i.x, i.y, i.z] for i in detections[index]])
             # todo: check if mean or median
@@ -59,10 +60,15 @@ class Muke(object):
             # find corresponding vertex (and calculate the delta to it)
             delta, vertex_index = query.vertex(mean_position)
             vertex = mesh.vertices[vertex_index]
+            # todo: find uv coordinate
             keypoints.append(KeyPoint3(index, vertex[0], vertex[1], vertex[2], vertex_index, delta))
+            summed_error += delta
 
-            print("[%02d]:\t%d\t(error: %.4f)"
-                  % (index, vertex_index, delta))
+            if self.debug:
+                print("[%02d]:\t%d\t(error: %.4f)" % (index, vertex_index, delta))
+
+        print("estimated %d key-points (error total: %.4f avg: %.4f)"
+              % (len(keypoints), summed_error, summed_error / len(keypoints)))
 
         if self.display:
             self._annotate_keypoints_3d(scene, keypoints)
@@ -114,7 +120,7 @@ class Muke(object):
 
         # annotate 3d keypoints
         if self.debug:
-            self._annotate_keypoints_3d(scene, result)
+            self._annotate_keypoints_3d(scene, result, color=(255, 0, 0))
 
         return result
 
@@ -125,17 +131,17 @@ class Muke(object):
         return round(keypoint.x * self.width), round(keypoint.y * self.height)
 
     @staticmethod
-    def _annotate_keypoints_3d(scene, keypoints: [KeyPoint3], size: float = 0.01):
+    def _annotate_keypoints_3d(scene, keypoints: [KeyPoint3], size: float = 1, color=(0, 255, 0)):
         for kp in keypoints:
             mat = trimesh.transformations.compose_matrix(translate=[kp.x, kp.y, kp.z])
             marker = trimesh.creation.box([size, size, size], mat)
-            marker.visual.face_colors = [0, 255, 0]
+            marker.visual.face_colors = color
             scene.add_geometry(marker)
 
-    def _annotate_keypoints_2d(self, image: Image, keypoints: [KeyPoint2], size: int = 5):
+    def _annotate_keypoints_2d(self, image: Image, keypoints: [KeyPoint2], size: int = 5, color=(0, 255, 0)):
         hf = size * 0.5
         draw = ImageDraw.Draw(image)
         for kp in keypoints:
             x, y = self._get_transformed_coordinates(kp)
-            draw.ellipse([x - hf, y - hf, x + hf, y + hf], outline=(0, 255, 0), width=2)
-            draw.text((x + hf, y + hf), "%d" % kp.index, fill=(0, 255, 0))
+            draw.ellipse([x - hf, y - hf, x + hf, y + hf], outline=color, width=2)
+            draw.text((x + hf, y + hf), "%d" % kp.index, fill=color)
