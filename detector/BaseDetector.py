@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from detector.KeyPoint import KeyPoint
+from detector.KeyPoint2 import KeyPoint2
 import numpy as np
 
 
@@ -14,5 +14,5 @@ class BaseDetector(ABC):
         pass
 
     @abstractmethod
-    def detect(self, image: np.ndarray) -> [KeyPoint]:
+    def detect(self, image: np.ndarray) -> [KeyPoint2]:
         pass

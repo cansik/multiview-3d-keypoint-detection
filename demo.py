@@ -12,7 +12,8 @@ detectors = {
 def main():
     with Muke(detectors[args.method],
               resolution=args.resolution,
-              display=args.display) as muke:
+              display=args.display,
+              debug=args.debug) as muke:
         results = muke.detect(args.input, views=[DetectionView("Test")])
         print(results)
 
@@ -25,7 +26,8 @@ if __name__ == "__main__":
     parser.add_argument("--method", default=detection_methods[0], choices=detection_methods,
                         help="Detection methods [%s]." % (", ".join(detection_methods)))
     parser.add_argument("--resolution", default=512, type=int, help="Render resolution for each view pass.")
-    parser.add_argument("--display", action='store_true', help="Shows debug frames and information.")
+    parser.add_argument("--display", action='store_true', help="Shows result rendering with keypoints.")
+    parser.add_argument("--debug", action='store_true', help="Shows debug frames and information.")
 
     args = parser.parse_args()
 

@@ -5,14 +5,18 @@ import numpy as np
 from PIL import Image, ImageDraw
 
 from detector.BaseDetector import BaseDetector
-from detector.KeyPoint import KeyPoint
+from detector.KeyPoint2 import KeyPoint2
 from lib.DetectionView import DetectionView
+from lib.KeyPoint3 import KeyPoint3
 
 
 class Muke(object):
-    def __init__(self, detector: BaseDetector, resolution: int = 512, display=False):
+    def __init__(self, detector: BaseDetector, resolution: int = 512, display=False, debug=False):
         self.detector = detector
+
         self.display = display
+        self.debug = debug
+
         self.width = resolution
         self.height = resolution
 
@@ -37,12 +41,14 @@ class Muke(object):
         for view in views:
             self._detect_view(scene, mesh, view)
 
-            # todo: collect or outputs and use mean or average (see what's better)
+        # todo: collect or outputs and use mean or average (see what's better)
+        # todo: find corresponding vertex (calculate the delta)
+        # todo: return vertex mapping of kp index to vertex id's and delta
 
         if self.display:
             scene.show()
 
-    def _detect_view(self, scene, mesh, view: DetectionView):
+    def _detect_view(self, scene, mesh, view: DetectionView) -> [KeyPoint3]:
         # offscreen renders
         data = scene.save_image(visible=True)
         png = Image.open(io.BytesIO(data))
@@ -55,8 +61,8 @@ class Muke(object):
         # detect keypoints
         keypoints = self.detector.detect(image_np)
 
-        # annotate
-        if self.display:
+        # annotate if debug is on
+        if self.debug:
             self._annotate_keypoints_2d(image, keypoints)
             image.show("%s: Key Points" % view.name)
 
@@ -71,41 +77,42 @@ class Muke(object):
             pixel_index = self._get_pixel_index(x, y)
             kp_indexes.append(pixel_index)
 
-        # raycast
+        # raycast each keypoint
         origins = origins[kp_indexes]
         vectors = vectors[kp_indexes]
         pixels = pixels[kp_indexes]
 
-        print("raytracing...")
-        # do the actual ray- mesh queries
+        # do the actual ray-mesh queries
         points, index_ray, index_tri = mesh.ray.intersects_location(
             origins, vectors, multiple_hits=False)
 
-        print(len(points))
+        # create result keypoints 3d
+        result = []
+        for i, index in enumerate(index_ray):
+            position = points[i]
+            result.append(KeyPoint3(index, position[0], position[1], position[2], index_tri[i]))
 
-        # debug
-        if self.display:
-            self._annotate_keypoints_3d(scene, points)
+        # annotate 3d keypoints
+        if self.debug:
+            self._annotate_keypoints_3d(scene, result)
 
-        # todo: raycast each point
-        # todo: find corresponding vertex (calculate the delta)
-        # todo: return vertex mapping of kp index to vertex id's and delta
+        return result
 
     def _get_pixel_index(self, x: int, y: int) -> int:
         return self.height * x + y
 
-    def _get_transformed_coordinates(self, keypoint: [KeyPoint]) -> (int, int):
+    def _get_transformed_coordinates(self, keypoint: [KeyPoint2]) -> (int, int):
         return round(keypoint.x * self.width), round(keypoint.y * self.height)
 
     @staticmethod
-    def _annotate_keypoints_3d(scene, points, size: float = 0.02):
-        for point in points:
-            mat = trimesh.transformations.compose_matrix(translate=point)
+    def _annotate_keypoints_3d(scene, keypoints: [KeyPoint3], size: float = 0.01):
+        for kp in keypoints:
+            mat = trimesh.transformations.compose_matrix(translate=[kp.x, kp.y, kp.z])
             marker = trimesh.creation.box([size, size, size], mat)
             marker.visual.face_colors = [0, 255, 0]
             scene.add_geometry(marker)
 
-    def _annotate_keypoints_2d(self, image: Image, keypoints: [KeyPoint], size: int = 5):
+    def _annotate_keypoints_2d(self, image: Image, keypoints: [KeyPoint2], size: int = 5):
         hf = size * 0.5
         draw = ImageDraw.Draw(image)
         for kp in keypoints:

@@ -5,7 +5,7 @@ import numpy as np
 from mediapipe.python.solution_base import SolutionBase
 
 from detector.BaseDetector import BaseDetector
-from detector.KeyPoint import KeyPoint
+from detector.KeyPoint2 import KeyPoint2
 
 mp_drawing = mp.solutions.drawing_utils
 
@@ -35,7 +35,7 @@ class MediaPipeBaseDetector(BaseDetector):
     def __exit__(self, type, value, traceback):
         self.release()
 
-    def detect(self, image: np.ndarray) -> [KeyPoint]:
+    def detect(self, image: np.ndarray) -> [KeyPoint2]:
         keypoints = []
 
         results = self.model.process(image)
@@ -45,11 +45,10 @@ class MediaPipeBaseDetector(BaseDetector):
             return keypoints
 
         for i, landmark in enumerate(landmarks.landmark):
-            keypoints.append(KeyPoint(
+            keypoints.append(KeyPoint2(
                 i,
                 landmark.x,
                 landmark.y,
-                landmark.z,
                 landmark.visibility
             ))
 
