@@ -134,6 +134,7 @@ class Muke(object):
 
     @staticmethod
     def _annotate_keypoints_3d(scene, keypoints: [KeyPoint3], size: float = 1, color=(0, 255, 0)):
+        # todo: scale size by model size
         for kp in keypoints:
             mat = trimesh.transformations.compose_matrix(translate=[kp.x, kp.y, kp.z])
             marker = trimesh.creation.box([size, size, size], mat)
