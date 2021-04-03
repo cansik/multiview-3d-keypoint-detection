@@ -38,14 +38,34 @@ class Muke(object):
                                  scene.camera.resolution.max())
 
         # could be running multi-processing
+        detections = {}
         for view in views:
-            self._detect_view(scene, mesh, view)
+            keypoints = self._detect_view(scene, mesh, view)
 
-        # todo: collect or outputs and use mean or average (see what's better)
-        # todo: find corresponding vertex (calculate the delta)
-        # todo: return vertex mapping of kp index to vertex id's and delta
+            # add keypoints to dictionary
+            for kp in keypoints:
+                if kp.index not in detections:
+                    detections[kp.index] = []
+                detections[kp.index].append(kp)
+
+        # combine detections
+        query = trimesh.proximity.ProximityQuery(mesh)
+        keypoints = []
+        for index in sorted(detections.keys()):
+            positions = np.array([[i.x, i.y, i.z] for i in detections[index]])
+            # todo: check if mean or median
+            mean_position = np.mean(positions, axis=0)
+
+            # find corresponding vertex (and calculate the delta to it)
+            delta, vertex_index = query.vertex(mean_position)
+            vertex = mesh.vertices[vertex_index]
+            keypoints.append(KeyPoint3(index, vertex[0], vertex[1], vertex[2], vertex_index, delta))
+
+            print("[%02d]:\t%d\t(error: %.4f)"
+                  % (index, vertex_index, delta))
 
         if self.display:
+            self._annotate_keypoints_3d(scene, keypoints)
             scene.show()
 
     def _detect_view(self, scene, mesh, view: DetectionView) -> [KeyPoint3]:
@@ -90,7 +110,7 @@ class Muke(object):
         result = []
         for i, index in enumerate(index_ray):
             position = points[i]
-            result.append(KeyPoint3(index, position[0], position[1], position[2], index_tri[i]))
+            result.append(KeyPoint3(index, position[0], position[1], position[2]))
 
         # annotate 3d keypoints
         if self.debug:
