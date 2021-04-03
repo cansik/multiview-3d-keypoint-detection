@@ -35,14 +35,14 @@ class Muke(object):
 
         # could be running multi-processing
         for view in views:
-            self._detect_view(scene, view)
+            self._detect_view(scene, mesh, view)
 
             # todo: collect or outputs and use mean or average (see what's better)
 
         if self.display:
             scene.show()
 
-    def _detect_view(self, scene, view: DetectionView):
+    def _detect_view(self, scene, mesh, view: DetectionView):
         # offscreen renders
         data = scene.save_image(visible=True)
         png = Image.open(io.BytesIO(data))
@@ -57,30 +57,55 @@ class Muke(object):
 
         # annotate
         if self.display:
-            self._annotate(image, keypoints)
+            self._annotate_keypoints_2d(image, keypoints)
             image.show("%s: Key Points" % view.name)
 
         # get camera rays
         origins, vectors, pixels = scene.camera_rays()
 
-        # raycast
+        # find relevant indexes
+        kp_indexes = []
         for kp in keypoints:
+            # todo: filter indexes which are in view!
             x, y = self._get_transformed_coordinates(kp)
             pixel_index = self._get_pixel_index(x, y)
+            kp_indexes.append(pixel_index)
 
-            print(kp.x)
+        # raycast
+        origins = origins[kp_indexes]
+        vectors = vectors[kp_indexes]
+        pixels = pixels[kp_indexes]
 
-            # todo: raycast each point
-            # todo: find corresponding vertex (calculate the delta)
-            # todo: return vertex mapping of kp index to vertex id's and delta
+        print("raytracing...")
+        # do the actual ray- mesh queries
+        points, index_ray, index_tri = mesh.ray.intersects_location(
+            origins, vectors, multiple_hits=False)
+
+        print(len(points))
+
+        # debug
+        if self.display:
+            self._annotate_keypoints_3d(scene, points)
+
+        # todo: raycast each point
+        # todo: find corresponding vertex (calculate the delta)
+        # todo: return vertex mapping of kp index to vertex id's and delta
 
     def _get_pixel_index(self, x: int, y: int) -> int:
-        return self.height * y + ((self.width - 1) - x)
+        return self.height * x + y
 
     def _get_transformed_coordinates(self, keypoint: [KeyPoint]) -> (int, int):
         return round(keypoint.x * self.width), round(keypoint.y * self.height)
 
-    def _annotate(self, image: Image, keypoints: [KeyPoint], size: int = 5):
+    @staticmethod
+    def _annotate_keypoints_3d(scene, points, size: float = 0.02):
+        for point in points:
+            mat = trimesh.transformations.compose_matrix(translate=point)
+            marker = trimesh.creation.box([size, size, size], mat)
+            marker.visual.face_colors = [0, 255, 0]
+            scene.add_geometry(marker)
+
+    def _annotate_keypoints_2d(self, image: Image, keypoints: [KeyPoint], size: int = 5):
         hf = size * 0.5
         draw = ImageDraw.Draw(image)
         for kp in keypoints:
