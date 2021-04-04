@@ -6,8 +6,8 @@ from PIL import Image, ImageDraw
 
 from detector.BaseDetector import BaseDetector
 from detector.KeyPoint2 import KeyPoint2
-from lib.DetectionView import DetectionView
-from lib.KeyPoint3 import KeyPoint3
+from model.DetectionView import DetectionView
+from model.KeyPoint3 import KeyPoint3
 
 
 class Muke(object):
