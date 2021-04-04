@@ -72,7 +72,7 @@ class Muke(object):
               % (len(keypoints), summed_error, summed_error / max(1.0, len(keypoints))))
 
         if self.display:
-            self._annotate_keypoints_3d(scene, keypoints)
+            self._annotate_keypoints_3d(scene, mesh, keypoints)
             scene.show()
 
         return keypoints
@@ -82,7 +82,7 @@ class Muke(object):
         mesh.apply_transform(trimesh.transformations.rotation_matrix(radians(view.rotation), direction=[0, 1, 0]))
 
         # offscreen renders
-        data = scene.save_image(visible=True)
+        data = scene.save_image(resolution=[self.width, self.height], visible=True)
         png = Image.open(io.BytesIO(data))
 
         # convert png to rgb image
@@ -132,10 +132,7 @@ class Muke(object):
 
         # annotate 3d keypoints
         if self.debug:
-            # calculate size
-            bb = mesh.bounding_box.primitive.extents
-            size = max(bb) * 0.01
-            self._annotate_keypoints_3d(scene, result, size=size, color=(255, 0, 0))
+            self._annotate_keypoints_3d(scene, mesh, result, color=(255, 0, 0))
 
         # reset view state
         mesh.apply_transform(trimesh.transformations.rotation_matrix(radians(-view.rotation), direction=[0, 1, 0]))
@@ -156,10 +153,14 @@ class Muke(object):
         return self.width * self.pixel_density
 
     @staticmethod
-    def _annotate_keypoints_3d(scene, keypoints: [KeyPoint3], size: float = 1, color=(0, 255, 0)):
+    def _annotate_keypoints_3d(scene, mesh, keypoints: [KeyPoint3], size: float = 0.01, color=(0, 255, 0)):
+        # calculate size
+        bb = mesh.bounding_box.primitive.extents
+        box_size = max(bb) * size
+
         for kp in keypoints:
             mat = trimesh.transformations.compose_matrix(translate=[kp.x, kp.y, kp.z])
-            marker = trimesh.creation.box([size, size, size], mat)
+            marker = trimesh.creation.box([box_size, box_size, box_size], mat)
             marker.visual.face_colors = color
             scene.add_geometry(marker)
 
