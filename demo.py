@@ -26,7 +26,10 @@ def main():
               resolution=args.resolution,
               display=args.display,
               debug=args.debug) as muke:
-        results = muke.detect(args.input, views=[DetectionView("Test")])
+        results = muke.detect(args.input, views=[
+            DetectionView("Front", rotation=0),
+            DetectionView("Back", rotation=180),
+        ])
         output.generate(args.input, results)
 
 

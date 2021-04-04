@@ -1,4 +1,5 @@
 import io
+from math import radians
 
 import trimesh
 import numpy as np
@@ -28,7 +29,6 @@ class Muke(object):
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.detector.release()
 
-    # todo: define the views input structure [(camera pose, relevant keypoints (weighted?))]
     def detect(self, mesh_path: str, views: [DetectionView]) -> [KeyPoint3]:
         mesh = trimesh.load(mesh_path)
 
@@ -78,6 +78,9 @@ class Muke(object):
         return keypoints
 
     def _detect_view(self, scene, mesh, view: DetectionView) -> [KeyPoint3]:
+        # apply view state
+        mesh.apply_transform(trimesh.transformations.rotation_matrix(radians(view.rotation), direction=[0, 1, 0]))
+
         # offscreen renders
         data = scene.save_image(visible=True)
         png = Image.open(io.BytesIO(data))
@@ -129,7 +132,13 @@ class Muke(object):
 
         # annotate 3d keypoints
         if self.debug:
-            self._annotate_keypoints_3d(scene, result, color=(255, 0, 0))
+            # calculate size
+            bb = mesh.bounding_box.primitive.extents
+            size = max(bb) * 0.01
+            self._annotate_keypoints_3d(scene, result, size=size, color=(255, 0, 0))
+
+        # reset view state
+        mesh.apply_transform(trimesh.transformations.rotation_matrix(radians(-view.rotation), direction=[0, 1, 0]))
 
         return result
 
@@ -148,7 +157,6 @@ class Muke(object):
 
     @staticmethod
     def _annotate_keypoints_3d(scene, keypoints: [KeyPoint3], size: float = 1, color=(0, 255, 0)):
-        # todo: scale size by model size
         for kp in keypoints:
             mat = trimesh.transformations.compose_matrix(translate=[kp.x, kp.y, kp.z])
             marker = trimesh.creation.box([size, size, size], mat)
