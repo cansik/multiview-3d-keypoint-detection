@@ -2,3 +2,4 @@
 venv
 *.pyc
 temp
+assets/person_keypoints.json

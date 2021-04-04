@@ -14,6 +14,8 @@ detectors = {
 
 
 def main():
+    print("running muke with %s..." % args.method)
+
     with Muke(detectors[args.method],
               resolution=args.resolution,
               display=args.display,
@@ -21,8 +23,8 @@ def main():
         results = muke.detect(args.input, views=[DetectionView("Test")])
 
         # create txt file besides input mesh
-        keypoint_file_name = "%s_keypoints.txt" % os.path.splitext(args.input)[0]
-        output = json.dumps([{"x": kp.x, "y": kp.y, "z": kp.z} for kp in results])
+        keypoint_file_name = "%s_keypoints.json" % os.path.splitext(args.input)[0]
+        output = json.dumps([{"x": kp.x, "y": kp.y, "z": kp.z} for kp in results], indent=4, sort_keys=True)
         with open(keypoint_file_name, "w") as file:
             file.write(output)
 
