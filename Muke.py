@@ -19,6 +19,7 @@ class Muke(object):
 
         self.width = resolution
         self.height = resolution
+        self.pixel_density = 1.0
 
     def __enter__(self):
         self.detector.setup()
@@ -68,7 +69,7 @@ class Muke(object):
                 print("[%02d]:\t%d\t(error: %.4f)" % (index, vertex_index, delta))
 
         print("estimated %d key-points (error total: %.4f avg: %.4f)"
-              % (len(keypoints), summed_error, summed_error / len(keypoints)))
+              % (len(keypoints), summed_error, summed_error / max(1.0, len(keypoints))))
 
         if self.display:
             self._annotate_keypoints_3d(scene, keypoints)
@@ -84,6 +85,12 @@ class Muke(object):
         # convert png to rgb image
         image = Image.new("RGB", png.size, (255, 255, 255))
         image.paste(png, mask=png.split()[3])
+
+        # set pixel density if necessary
+        # warning: changes state (no concurrency)
+        self.pixel_density = image.width / self.width
+
+        # PIL image to numpy
         image_np = np.array(image)
 
         # detect keypoints
@@ -127,10 +134,17 @@ class Muke(object):
         return result
 
     def _get_pixel_index(self, x: int, y: int) -> int:
-        return self.height * x + y
+        return round(self._get_render_height() * x + y)
 
     def _get_transformed_coordinates(self, keypoint: [KeyPoint2]) -> (int, int):
-        return round(keypoint.x * self.width), round(keypoint.y * self.height)
+        return round(keypoint.x * self._get_render_width()), \
+               round(keypoint.y * self._get_render_height())
+
+    def _get_render_width(self):
+        return self.width * self.pixel_density
+
+    def _get_render_height(self):
+        return self.width * self.pixel_density
 
     @staticmethod
     def _annotate_keypoints_3d(scene, keypoints: [KeyPoint3], size: float = 1, color=(0, 255, 0)):
