@@ -5,6 +5,30 @@ A simple approach to detect 3d keypoints by using 2d estimation methods and mult
 
 ### Running
 
+```bash
+usage: demo.py [-h] [--detector {media-pipe-pose,media-pipe-face}]
+               [--resolution RESOLUTION] [--generator {wrap3}] [--display]
+               [--debug]
+               input
+
+Detects keypoint locations in a 3d model.
+
+positional arguments:
+  input                 Input mesh to process.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --detector {media-pipe-pose,media-pipe-face}
+                        Detection method for 2d keypoint detection (default:
+                        media-pipe-pose).
+  --resolution RESOLUTION
+                        Render resolution for each view pass (default: 512).
+  --generator {wrap3}   Generator methods for output generation (default:
+                        wrap3).
+  --display             Shows result rendering with keypoints (default: False)
+  --debug               Shows debug frames and information (default: False)
+```
+
 ### Idea
 
 ### About
