@@ -21,6 +21,7 @@ class Muke(object):
         self.width = resolution
         self.height = resolution
         self.pixel_density = 1.0
+        self.camera_distance = 1.2
 
     def __enter__(self):
         self.detector.setup()
@@ -72,6 +73,8 @@ class Muke(object):
               % (len(keypoints), summed_error, summed_error / max(1.0, len(keypoints))))
 
         if self.display:
+            # reset view
+            self._set_scene_rotation(scene, mesh, 0)
             self._annotate_keypoints_3d(scene, mesh, keypoints)
             scene.show()
 
@@ -79,7 +82,7 @@ class Muke(object):
 
     def _detect_view(self, scene, mesh, view: DetectionView) -> [KeyPoint3]:
         # apply view state
-        mesh.apply_transform(trimesh.transformations.rotation_matrix(radians(view.rotation), direction=[0, 1, 0]))
+        self._set_scene_rotation(scene, mesh, view.rotation)
 
         # offscreen renders
         data = scene.save_image(resolution=[self.width, self.height], visible=True)
@@ -134,10 +137,13 @@ class Muke(object):
         if self.debug:
             self._annotate_keypoints_3d(scene, mesh, result, color=(255, 0, 0))
 
-        # reset view state
-        mesh.apply_transform(trimesh.transformations.rotation_matrix(radians(-view.rotation), direction=[0, 1, 0]))
-
         return result
+
+    def _set_scene_rotation(self, scene, mesh, angle):
+        scene.camera_transform = scene.camera.look_at(
+            points=mesh.vertices,
+            distance=max(mesh.bounding_box.primitive.extents) * self.camera_distance,
+            rotation=trimesh.transformations.euler_matrix(0, radians(angle), 0))
 
     def _get_pixel_index(self, x: int, y: int) -> int:
         return round(self._get_render_height() * x + y)
