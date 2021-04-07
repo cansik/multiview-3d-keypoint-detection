@@ -5,6 +5,40 @@ A simple approach to detect 3d keypoints by using 2d estimation methods and mult
 
 ### Running
 
+#### Configuration
+
+Example configuration:
+
+```json
+{
+  "description": "MP Face",
+  "detector": "media-pipe-face",
+  "resolution": 1024,
+  "generator": "wrap3",
+  "views": [
+    {
+      "name": "frontal",
+      "rotation": 0,
+      "keypoints": [
+        4,
+        76,
+        306
+      ]
+    }
+  ]
+}
+```
+
+Example on how to create a range (`skip` is optional):
+
+```json
+{
+  "start": 10,
+  "end": 15,
+  "skip": [13, 14]
+}
+```
+
 #### Demo
 
 ```

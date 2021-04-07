@@ -27,7 +27,18 @@ class MukeConfiguration(object):
         for view_data in data["views"]:
             view = DetectionView(view_data["name"],
                                  view_data["rotation"],
-                                 keypoints=set(view_data["keypoints"]))
+                                 keypoints=set())
+
+            for value in view_data["keypoints"]:
+                if isinstance(value, int):
+                    view.keypoints.add(value)
+                else:
+                    # parse a range
+                    start = value["start"]
+                    end = value["end"]
+                    skip = set(value.get("skip", []))
+                    [view.keypoints.add(i) for i in range(start, end + 1) if i not in skip]
+
             views.append(view)
 
         if len(views) > 0:
