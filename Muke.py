@@ -1,8 +1,8 @@
 import io
 from math import radians
 
-import trimesh
 import numpy as np
+import trimesh
 from PIL import Image, ImageDraw
 
 from detector.BaseDetector import BaseDetector
@@ -117,7 +117,6 @@ class Muke(object):
         # find relevant indexes
         kp_pixel_indexes = []
         for kp in keypoints:
-            # todo: filter indexes which are in view!
             x, y = self._get_transformed_coordinates(kp)
             pixel_index = self._get_pixel_index(x, y)
             kp_pixel_indexes.append(pixel_index)
@@ -128,13 +127,14 @@ class Muke(object):
         pixels = pixels[kp_pixel_indexes]
 
         # do the actual ray-mesh queries
-        points, index_ray, index_tri = mesh.ray.intersects_location(
-            origins, vectors, multiple_hits=False)
+        points, index_ray, index_tri = mesh.ray.intersects_location(origins, vectors, multiple_hits=False)
 
         # create result keypoints 3d
         result = []
-        for i, kp in enumerate(keypoints):
+        for i, index in enumerate(index_ray):
+            # i is the point index, index the ray index
             position = points[i]
+            kp = keypoints[index]
             result.append(KeyPoint3(kp.index, position[0], position[1], position[2]))
 
         # annotate 3d keypoints
