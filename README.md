@@ -5,6 +5,22 @@ A simple approach to detect 3d keypoints by using 2d estimation methods and mult
 
 ### Running
 
+#### Demo
+
+```
+python demo.py assets/person.ply --display --resolution 1024
+```
+
+```bash
+python demo.py temp/AlexedWrapped.obj --display --resolution 1024 --detector media-pipe-face
+```
+
+```bash
+python demo.py temp/AlexedWrapped.obj --display --config config/media-pipe-face.json
+```
+
+#### Help
+
 ```bash
 usage: demo.py [-h] [--detector {media-pipe-pose,media-pipe-face}]
                [--resolution RESOLUTION] [--generator {wrap3}] [--display]
