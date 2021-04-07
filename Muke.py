@@ -35,6 +35,7 @@ class Muke(object):
 
         # setup scene
         scene = mesh.scene()
+        trimesh.scene.lighting.autolight(scene)
         scene.camera.resolution = [self.height, self.width]
         scene.camera.fov = 50 * (scene.camera.resolution /
                                  scene.camera.resolution.max())
