@@ -11,7 +11,7 @@ def main():
     print("running muke with %s to %s..." % (args.detector, args.generator))
 
     # create config
-    # todo: make it possible to overwrite json settings
+    # todo: make it possible to overwrite json settings from args
     if args.config is None:
         config = MukeConfiguration.from_args(args)
     else:

@@ -22,7 +22,17 @@ class MukeConfiguration(object):
     def from_json(data):
         config = MukeConfiguration()
         MukeConfiguration.copy_single_params(config, data)
-        # todo parse views
+
+        views = []
+        for view_data in data["views"]:
+            view = DetectionView(view_data["name"],
+                                 view_data["rotation"],
+                                 keypoints=set(view_data["keypoints"]))
+            views.append(view)
+
+        if len(views) > 0:
+            config.views = views
+
         return config
 
     @staticmethod

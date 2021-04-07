@@ -1,0 +1,31 @@
+{
+  "description": "Media Pipe Frontal Face Configuration",
+  "detector": "media-pipe-face",
+  "resolution": 1024,
+  "generator": "wrap3",
+  "views": [
+    {
+      "name": "frontal",
+      "rotation": 0,
+      "keypoints": [
+        4, 76, 306
+      ]
+    },
+    {
+      "name": "left",
+      "rotation": -15,
+      "keypoints": [
+        76, 306,
+        129, 33, 133
+      ]
+    },
+    {
+      "name": "right",
+      "rotation": 15,
+      "keypoints": [
+        76, 306,
+        358, 263, 362
+      ]
+    }
+  ]
+}

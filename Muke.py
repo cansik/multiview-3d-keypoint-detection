@@ -115,17 +115,17 @@ class Muke(object):
         origins, vectors, pixels = scene.camera_rays()
 
         # find relevant indexes
-        kp_indexes = []
+        kp_pixel_indexes = []
         for kp in keypoints:
             # todo: filter indexes which are in view!
             x, y = self._get_transformed_coordinates(kp)
             pixel_index = self._get_pixel_index(x, y)
-            kp_indexes.append(pixel_index)
+            kp_pixel_indexes.append(pixel_index)
 
         # raycast each keypoint
-        origins = origins[kp_indexes]
-        vectors = vectors[kp_indexes]
-        pixels = pixels[kp_indexes]
+        origins = origins[kp_pixel_indexes]
+        vectors = vectors[kp_pixel_indexes]
+        pixels = pixels[kp_pixel_indexes]
 
         # do the actual ray-mesh queries
         points, index_ray, index_tri = mesh.ray.intersects_location(
@@ -133,9 +133,9 @@ class Muke(object):
 
         # create result keypoints 3d
         result = []
-        for i, index in enumerate(index_ray):
+        for i, kp in enumerate(keypoints):
             position = points[i]
-            result.append(KeyPoint3(index, position[0], position[1], position[2]))
+            result.append(KeyPoint3(kp.index, position[0], position[1], position[2]))
 
         # annotate 3d keypoints
         if self.debug:

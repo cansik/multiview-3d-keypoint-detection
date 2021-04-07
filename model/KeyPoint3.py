@@ -10,3 +10,6 @@ class KeyPoint3(object):
     def __str__(self):
         return "[%d: %.2f, %.2f, %.2f (%d)]" \
                % (self.index, self.x, self.y, self.z, self.vertex_index)
+
+    def __repr__(self):
+        return "i:%d v:%d" % (self.index, self.vertex_index)
