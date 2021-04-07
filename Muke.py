@@ -102,6 +102,10 @@ class Muke(object):
         # detect keypoints
         keypoints = self.detector.detect(image_np)
 
+        # filter keypoints
+        if view.keypoints is not None:
+            keypoints = list(filter(lambda kp: kp.index in view.keypoints, keypoints))
+
         # annotate if debug is on
         if self.debug:
             self._annotate_keypoints_2d(image, keypoints)

@@ -1,0 +1,53 @@
+from model import MukeDetectors, MukeGenerators, MukeDefaultResolution
+from model.DetectionView import DetectionView
+
+
+class MukeConfiguration(object):
+    def __init__(self):
+        detection_methods = list(MukeDetectors.keys())
+        generator_methods = list(MukeGenerators.keys())
+
+        self.detector = detection_methods[0]
+        self.generator = generator_methods[0]
+        self.resolution = MukeDefaultResolution
+        self.views = [DetectionView("Front", rotation=0)]
+
+    @staticmethod
+    def from_args(args):
+        config = MukeConfiguration()
+        MukeConfiguration.copy_single_params(config, args)
+        return config
+
+    @staticmethod
+    def from_json(data):
+        config = MukeConfiguration()
+        MukeConfiguration.copy_single_params(config, data)
+        # todo parse views
+        return config
+
+    @staticmethod
+    def copy_single_params(config, data):
+        MukeConfiguration._set_value_if_available(data, config, "detector", method=lambda x: MukeDetectors[x])
+        MukeConfiguration._set_value_if_available(data, config, "generator", method=lambda x: MukeGenerators[x])
+        MukeConfiguration._set_value_if_available(data, config, "resolution")
+
+    @staticmethod
+    def _set_value_if_available(source, target, name: str, method=lambda x: x):
+        if MukeConfiguration._has_value(source, name):
+            setattr(target, name, method(MukeConfiguration._get_value(source, name)))
+
+    @staticmethod
+    def _has_value(obj, name: str) -> bool:
+        if hasattr(obj, name):
+            return True
+        else:
+            if name in obj:
+                return True
+        return False
+
+    @staticmethod
+    def _get_value(obj, name: str):
+        if hasattr(obj, name):
+            return getattr(obj, name)
+        else:
+            return obj[name]

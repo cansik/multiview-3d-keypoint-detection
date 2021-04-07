@@ -1,50 +1,48 @@
 import argparse
-import os
 import json
 
-from detector.MediaPipeFaceDetector import MediaPipeFaceDetector
-from detector.MediaPipePoseDetector import MediaPipePoseDetector
 from Muke import Muke
-from generator.Wrap3Generator import Wrap3Generator
+from model import MukeDetectors, MukeGenerators, MukeDefaultResolution
 from model.DetectionView import DetectionView
-
-detectors = {
-    "media-pipe-pose": MediaPipePoseDetector(),
-    "media-pipe-face": MediaPipeFaceDetector()
-}
-
-generators = {
-    "wrap3": Wrap3Generator()
-}
+from model.MukeConfiguration import MukeConfiguration
 
 
 def main():
     print("running muke with %s to %s..." % (args.detector, args.generator))
-    output = generators[args.generator]
 
-    with Muke(detectors[args.detector],
-              resolution=args.resolution,
+    # create config
+    # todo: make it possible to overwrite json settings
+    if args.config is None:
+        config = MukeConfiguration.from_args(args)
+    else:
+        with open(args.config) as json_file:
+            data = json.load(json_file)
+        config = MukeConfiguration.from_json(data)
+
+    output = config.generator
+
+    with Muke(config.detector,
+              resolution=config.resolution,
               display=args.display,
               debug=args.debug) as muke:
-        results = muke.detect(args.input, views=[
-            DetectionView("Front", rotation=0),
-            DetectionView("Back", rotation=180),
-        ])
+
+        results = muke.detect(args.input, views=config.views)
         output.generate(args.input, results)
 
 
 if __name__ == "__main__":
-    detection_methods = list(detectors.keys())
-    generator_methods = list(generators.keys())
+    detection_methods = list(MukeDetectors.keys())
+    generator_methods = list(MukeGenerators.keys())
 
     parser = argparse.ArgumentParser(description='Detects keypoint locations in a 3d model.')
     parser.add_argument("input", help="Input mesh to process.")
     parser.add_argument("--detector", default=detection_methods[0], choices=detection_methods,
                         help="Detection method for 2d keypoint detection (default: %s)." % detection_methods[0])
-    parser.add_argument("--resolution", default=512, type=int,
-                        help="Render resolution for each view pass (default: 512).")
+    parser.add_argument("--resolution", default=MukeDefaultResolution, type=int,
+                        help="Render resolution for each view pass (default: %d)." % MukeDefaultResolution)
     parser.add_argument("--generator", default=generator_methods[0], choices=generator_methods,
                         help="Generator methods for output generation (default: %s)." % generator_methods[0])
+    parser.add_argument("--config", required=False, help="Path to the configuration JSON file.")
     parser.add_argument("--display", action='store_true',
                         help="Shows result rendering with keypoints (default: False)")
     parser.add_argument("--debug", action='store_true',
