@@ -41,22 +41,22 @@ Example on how to create a range (`skip` is optional):
 
 #### Demo
 
-```
-python demo.py assets/person.ply --display --resolution 1024
+```bash
+python -m muke assets/person.ply --display --resolution 1024
 ```
 
 ```bash
-python demo.py temp/AlexedWrapped.obj --display --resolution 1024 --detector media-pipe-face
+python -m muke temp/AlexedWrapped.obj --display --resolution 1024 --detector media-pipe-face
 ```
 
 ```bash
-python demo.py temp/AlexedWrapped.obj --display --config config/media-pipe-face.json
+python -m muke temp/AlexedWrapped.obj --display --config config/media-pipe-face.json
 ```
 
 #### Help
 
 ```bash
-usage: demo.py [-h] [--detector {media-pipe-pose,media-pipe-face}]
+usage: muke [-h] [--detector {media-pipe-pose,media-pipe-face}]
                [--resolution RESOLUTION] [--generator {wrap3}] [--display]
                [--debug]
                input
