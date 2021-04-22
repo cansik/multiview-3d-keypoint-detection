@@ -1,7 +1,15 @@
 # Multiview 3D Keypoint Detection (Muke)
 A simple approach to detect 3d keypoints by using 2d estimation methods and multiview rendering.
 
+### Idea
+
 ### Installation
+
+To install the package use the following pip command:
+
+```bash
+pip install git+https://github.com/cansik/multiview-3d-keypoint-detection.git@1.0.0
+```
 
 ### Running
 
@@ -79,7 +87,5 @@ optional arguments:
   --debug               Shows debug frames and information (default: False)
 ```
 
-### Idea
-
 ### About
-Developed by cansik @ 2021
+MIT License - Copyright (c) 2021 Florian Bruggisser
