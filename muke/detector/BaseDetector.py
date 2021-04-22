@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from detector.KeyPoint2 import KeyPoint2
+from muke.detector.KeyPoint2 import KeyPoint2
 import numpy as np
 
 

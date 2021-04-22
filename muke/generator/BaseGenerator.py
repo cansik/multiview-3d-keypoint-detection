@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from model.KeyPoint3 import KeyPoint3
+from muke.model import KeyPoint3
 
 
 class BaseGenerator(ABC):

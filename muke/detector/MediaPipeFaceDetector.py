@@ -1,7 +1,7 @@
 import mediapipe as mp
 from mediapipe.python.solution_base import SolutionBase
 
-from detector.MediaPiperBaseDetector import MediaPipeBaseDetector
+from muke.detector.MediaPiperBaseDetector import MediaPipeBaseDetector
 
 mp_drawing = mp.solutions.drawing_utils
 mp_model = mp.solutions.face_mesh

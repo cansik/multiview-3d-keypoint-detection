@@ -1,10 +1,9 @@
 import argparse
 import json
 
-from Muke import Muke
-from model import MukeDetectors, MukeGenerators, MukeDefaultResolution
-from model.DetectionView import DetectionView
-from model.MukeConfiguration import MukeConfiguration
+from muke.model import MukeDetectors, MukeGenerators, MukeDefaultResolution
+from muke.model.MukeConfiguration import MukeConfiguration
+from muke.Muke import Muke
 
 
 def main():
@@ -34,7 +33,8 @@ if __name__ == "__main__":
     detection_methods = list(MukeDetectors.keys())
     generator_methods = list(MukeGenerators.keys())
 
-    parser = argparse.ArgumentParser(description='Detects keypoint locations in a 3d model.')
+    parser = argparse.ArgumentParser(prog="muke",
+                                     description='Detects keypoint locations in a 3d model.')
     parser.add_argument("input", help="Input mesh to process.")
     parser.add_argument("--detector", default=detection_methods[0], choices=detection_methods,
                         help="Detection method for 2d keypoint detection (default: %s)." % detection_methods[0])

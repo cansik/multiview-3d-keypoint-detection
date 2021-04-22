@@ -5,10 +5,10 @@ import numpy as np
 import trimesh
 from PIL import Image, ImageDraw
 
-from detector.BaseDetector import BaseDetector
-from detector.KeyPoint2 import KeyPoint2
-from model.DetectionView import DetectionView
-from model.KeyPoint3 import KeyPoint3
+from muke.detector.BaseDetector import BaseDetector
+from muke.detector.KeyPoint2 import KeyPoint2
+from muke.model.DetectionView import DetectionView
+from muke.model.KeyPoint3 import KeyPoint3
 
 
 class Muke(object):

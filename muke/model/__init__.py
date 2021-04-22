@@ -1,6 +1,6 @@
-from detector.MediaPipeFaceDetector import MediaPipeFaceDetector
-from detector.MediaPipePoseDetector import MediaPipePoseDetector
-from generator.Wrap3Generator import Wrap3Generator
+from muke.detector.MediaPipeFaceDetector import MediaPipeFaceDetector
+from muke.detector.MediaPipePoseDetector import MediaPipePoseDetector
+from muke.generator.Wrap3Generator import Wrap3Generator
 
 MukeDetectors = {
     "media-pipe-pose": MediaPipePoseDetector(),

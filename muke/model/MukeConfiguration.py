@@ -1,5 +1,5 @@
-from model import MukeDetectors, MukeGenerators, MukeDefaultResolution
-from model.DetectionView import DetectionView
+from muke.model import MukeDetectors, MukeGenerators, MukeDefaultResolution
+from muke.model.DetectionView import DetectionView
 
 
 class MukeConfiguration(object):

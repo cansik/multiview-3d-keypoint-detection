@@ -4,8 +4,8 @@ import mediapipe as mp
 import numpy as np
 from mediapipe.python.solution_base import SolutionBase
 
-from detector.BaseDetector import BaseDetector
-from detector.KeyPoint2 import KeyPoint2
+from muke.detector.BaseDetector import BaseDetector
+from muke.detector.KeyPoint2 import KeyPoint2
 
 mp_drawing = mp.solutions.drawing_utils
 

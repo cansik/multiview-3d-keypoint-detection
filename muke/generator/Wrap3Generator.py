@@ -1,8 +1,8 @@
 import json
 import os
 
-from generator.BaseGenerator import BaseGenerator
-from model.KeyPoint3 import KeyPoint3
+from muke.generator.BaseGenerator import BaseGenerator
+from muke.model import KeyPoint3
 
 
 class Wrap3Generator(BaseGenerator):
