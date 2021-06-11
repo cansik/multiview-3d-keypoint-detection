@@ -1,0 +1,22 @@
+{
+  "description": "Media Pipe Pose Configuration",
+  "detector": "media-pipe-pose",
+  "resolution": 1024,
+  "generator": "wrap3",
+  "views": [
+    {
+      "name": "frontal",
+      "rotation": 0,
+      "keypoints": [
+        28, 27,
+        26, 25,
+        24, 23,
+        12, 11,
+        14, 13,
+        16, 15,
+        5, 2,
+        0
+      ]
+    }
+  ]
+}

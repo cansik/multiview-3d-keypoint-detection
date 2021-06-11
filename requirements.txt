@@ -5,6 +5,7 @@ pillow
 networkx
 rtree
 pyglet
+tqdm
 
 scipy
 
