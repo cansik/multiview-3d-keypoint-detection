@@ -1,3 +1,5 @@
+--find-links https://github.com/cansik/mediapipe-silicon/releases/tag/v0.8.9
+
 wheel
 numpy
 trimesh
@@ -10,4 +12,5 @@ tqdm
 scipy
 
 # pose estimation
-mediapipe==0.8.3.1
+mediapipe-silicon; platform_system == "Darwin" and platform.machine == 'arm64'
+mediapipe; platform_system != "Darwin" and platform.machine != 'arm64'
