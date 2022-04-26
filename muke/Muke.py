@@ -64,7 +64,8 @@ class Muke(object):
             delta, vertex_index = query.vertex(mean_position)
             vertex = mesh.vertices[vertex_index]
             # todo: find uv coordinate
-            keypoints.append(KeyPoint3(index, vertex[0], vertex[1], vertex[2], vertex_index, delta))
+            keypoints.append(KeyPoint3(index, vertex[0], vertex[1], vertex[2],
+                                       vertex_index, delta, mean_position))
             summed_error += delta
 
             if self.debug:
