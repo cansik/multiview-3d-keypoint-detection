@@ -21,7 +21,7 @@ class Muke(object):
         self.height = resolution
         self.pixel_density = 1.0
 
-        self.ray_size = 10
+        self.ray_size = 1
 
         self.camera_zoom = 0.55
         self.camera_fov = -90  # by default orthographic
@@ -46,7 +46,7 @@ class Muke(object):
         vis.add_geometry(mesh, reset_bounding_box=True)
 
         ctr: o3d.visualization.ViewControl = vis.get_view_control()
-        ctr.change_field_of_view(self.camera_zoom)
+        ctr.change_field_of_view(self.camera_fov)
         ctr.set_zoom(self.camera_zoom)
 
         opt: o3d.visualization.RenderOption = vis.get_render_option()
@@ -161,17 +161,23 @@ class Muke(object):
 
             result.append(KeyPoint3(kp.index, avg_position[0], avg_position[1], avg_position[2]))
 
+        # reset view state
+        self._set_scene_rotation(vis, -view.rotation)
+
         # annotate 3d keypoints
         if self.debug:
-            self._annotate_keypoints_3d(f"{view.name}: 3D Key Points", mesh, result, color=(255, 0, 0))
+            pass
+            # key-point annotation has to be done in a separate glwindow
+            # self._annotate_keypoints_3d(f"{view.name}: 3D Key Points", mesh, result, color=(255, 0, 0))
 
         return result
 
     @staticmethod
     def _set_scene_rotation(vis: o3d.visualization.VisualizerWithVertexSelection, angle_x: float):
-        vis.reset_view_point(True)
         ctr: o3d.visualization.ViewControl = vis.get_view_control()
         ctr.rotate(2000.0 / 360.0 * angle_x, 0)
+        vis.poll_events()
+        vis.update_renderer()
 
     def _get_pixel_index(self, x: int, y: int) -> int:
         return round(self._get_render_height() * x + y)
