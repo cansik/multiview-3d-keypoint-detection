@@ -21,7 +21,7 @@ class Muke(object):
         self.height = resolution
         self.pixel_density = 1.0
 
-        self.ray_size = 1
+        self.ray_size = 5
 
         self.camera_zoom = 0.55
         self.camera_fov = -90  # by default orthographic
@@ -149,8 +149,12 @@ class Muke(object):
         result = []
         for kp in keypoints:
             x, y = self._get_transformed_coordinates(kp)
+            half_ray_size = self.ray_size * 0.5
 
             picked_vertices = vis.pick_points(x, y, self.ray_size, self.ray_size)
+            # todo: replace this with an actual position estimation (raycasting) instead of a vertex
+            picked_vertices = vis.pick_points(x - half_ray_size, y - half_ray_size, self.ray_size, self.ray_size)
+            vis.add_picked_points(picked_vertices)
             picked_vertices = [picked_vertices[i] for i in range(len(picked_vertices))]
 
             if len(picked_vertices) == 0:
