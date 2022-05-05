@@ -1,10 +1,7 @@
 wheel
 numpy
-trimesh
-pillow
-networkx
-rtree
-pyglet
+open3d
+opencv-python
 tqdm
 
 scipy

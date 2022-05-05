@@ -25,7 +25,7 @@ def main():
               display=args.display,
               debug=args.debug) as muke:
 
-        results = muke.detect(args.input, views=config.views)
+        results = muke.detect_file(args.input, views=config.views)
         output.generate(args.input, results)
 
 

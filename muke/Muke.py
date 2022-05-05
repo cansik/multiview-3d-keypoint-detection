@@ -1,14 +1,13 @@
-import io
-from math import radians
-
+import cv2
 import numpy as np
-import trimesh
-from PIL import Image, ImageDraw
+import open3d as o3d
 
 from muke.detector.BaseDetector import BaseDetector
 from muke.detector.KeyPoint2 import KeyPoint2
 from muke.model.DetectionView import DetectionView
 from muke.model.KeyPoint3 import KeyPoint3
+
+from scipy.spatial import distance
 
 
 class Muke(object):
@@ -21,7 +20,13 @@ class Muke(object):
         self.width = resolution
         self.height = resolution
         self.pixel_density = 1.0
-        self.camera_distance = 1.2
+
+        self.ray_size = 10
+
+        self.camera_zoom = 0.55
+        self.camera_fov = -90  # by default orthographic
+
+        self.background_color = [255, 255, 255]
 
     def __enter__(self):
         self.detector.setup()
@@ -30,20 +35,37 @@ class Muke(object):
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.detector.release()
 
-    def detect(self, mesh_path: str, views: [DetectionView]) -> [KeyPoint3]:
-        mesh = trimesh.load(mesh_path)
+    def detect_file(self, mesh_path: str, views: [DetectionView], post_processing: bool = True) -> [KeyPoint3]:
+        mesh = o3d.io.read_triangle_mesh(mesh_path, enable_post_processing=post_processing)
+        return self.detect(mesh, views)
 
+    def detect(self, mesh: o3d.geometry.TriangleMesh, views: [DetectionView]) -> [KeyPoint3]:
         # setup scene
-        scene = mesh.scene()
-        trimesh.scene.lighting.autolight(scene)
-        scene.camera.resolution = [self.height, self.width]
-        scene.camera.fov = 50 * (scene.camera.resolution /
-                                 scene.camera.resolution.max())
+        vis = o3d.visualization.VisualizerWithVertexSelection()
+        vis.create_window(width=self.width, height=self.height, visible=self.display)
+        vis.add_geometry(mesh, reset_bounding_box=True)
 
-        # could be running multi-processing
+        ctr: o3d.visualization.ViewControl = vis.get_view_control()
+        ctr.change_field_of_view(self.camera_zoom)
+        ctr.set_zoom(self.camera_zoom)
+
+        opt: o3d.visualization.RenderOption = vis.get_render_option()
+        opt.background_color = np.asarray(self.background_color)
+        opt.show_coordinate_frame = False
+
+        # detect keypoints
         detections = {}
-        for view in views:
-            keypoints = self._detect_view(scene, mesh, view)
+        view_stack = views[::-1]
+
+        def render(v):
+            if len(view_stack) == 0:
+                # vis.close()
+                v.close()
+                vis.destroy_window()
+                return
+
+            view = view_stack.pop()
+            keypoints = self._detect_view(vis, mesh, view)
 
             # add keypoints to dictionary
             for kp in keypoints:
@@ -51,20 +73,33 @@ class Muke(object):
                     detections[kp.index] = []
                 detections[kp.index].append(kp)
 
-        # combine detections
-        query = trimesh.proximity.ProximityQuery(mesh)
+        # run with animation callback
+        vis.register_animation_callback(render)
+        vis.run()
+
+        # setup raycasting scene
+        t_mesh = o3d.t.geometry.TriangleMesh.from_legacy(mesh)
+        scene = o3d.t.geometry.RaycastingScene()
+        scene.add_triangles(t_mesh)
+
+        # combine detections and select closest vertex
         keypoints = []
         summed_error = 0.0
         for index in sorted(detections.keys()):
             positions = np.array([[i.x, i.y, i.z] for i in detections[index]])
-            # todo: check if mean or median
             mean_position = np.mean(positions, axis=0)
 
             # find corresponding vertex (and calculate the delta to it)
-            delta, vertex_index = query.vertex(mean_position)
-            vertex = mesh.vertices[vertex_index]
+            query_point = o3d.core.Tensor([mean_position], dtype=o3d.core.Dtype.Float32)
+            result = scene.compute_closest_points(query_point)
+
+            # get first point of results
+            position = result["points"].numpy()[0]
+            vertex_index = result["primitive_ids"].numpy()[0]
+            delta = distance.euclidean(mean_position, position)
+
             # todo: find uv coordinate
-            keypoints.append(KeyPoint3(index, vertex[0], vertex[1], vertex[2],
+            keypoints.append(KeyPoint3(index, float(position[0]), float(position[1]), float(position[2]),
                                        vertex_index, delta, mean_position))
             summed_error += delta
 
@@ -75,31 +110,23 @@ class Muke(object):
               % (len(keypoints), summed_error, summed_error / max(1.0, len(keypoints))))
 
         if self.display:
-            # reset view
-            self._set_scene_rotation(scene, mesh, 0)
-            self._annotate_keypoints_3d(scene, mesh, keypoints)
-            scene.show()
+            self._annotate_keypoints_3d("Result", mesh, keypoints)
 
         return keypoints
 
-    def _detect_view(self, scene, mesh, view: DetectionView) -> [KeyPoint3]:
+    def _detect_view(self, vis: o3d.visualization.VisualizerWithVertexSelection,
+                     mesh: o3d.geometry.TriangleMesh,
+                     view: DetectionView) -> [KeyPoint3]:
         # apply view state
-        self._set_scene_rotation(scene, mesh, view.rotation)
+        self._set_scene_rotation(vis, view.rotation)
 
         # offscreen renders
-        data = scene.save_image(resolution=[self.width, self.height], visible=True)
-        png = Image.open(io.BytesIO(data))
+        vis.poll_events()
+        vis.update_renderer()
+        data = np.asarray(vis.capture_screen_float_buffer())
 
-        # convert png to rgb image
-        image = Image.new("RGB", png.size, (255, 255, 255))
-        image.paste(png, mask=png.split()[3])
-
-        # set pixel density if necessary
-        # warning: changes state (no concurrency)
-        self.pixel_density = image.width / self.width
-
-        # PIL image to numpy
-        image_np = np.array(image)
+        # image to numpy
+        image_np = (data * 255).astype(np.uint8)
 
         # detect keypoints
         keypoints = self.detector.detect(image_np)
@@ -110,46 +137,41 @@ class Muke(object):
 
         # annotate if debug is on
         if self.debug:
-            self._annotate_keypoints_2d(image, keypoints)
-            image.show("%s: Key Points" % view.name)
+            preview_image = image_np.copy()
+            preview_image = cv2.cvtColor(preview_image, cv2.COLOR_RGB2BGR)
+            self._annotate_keypoints_2d(preview_image, keypoints)
+            cv2.imshow(f"{view.name}: 2D Key Points", preview_image)
+            cv2.waitKey(0)
+            cv2.destroyAllWindows()
 
-        # get camera rays
-        origins, vectors, pixels = scene.camera_rays()
-
-        # find relevant indexes
-        kp_pixel_indexes = []
+        # raycast from camera
+        vertices = np.asarray(mesh.vertices)
+        result = []
         for kp in keypoints:
             x, y = self._get_transformed_coordinates(kp)
-            pixel_index = self._get_pixel_index(x, y)
-            kp_pixel_indexes.append(pixel_index)
 
-        # raycast each keypoint
-        origins = origins[kp_pixel_indexes]
-        vectors = vectors[kp_pixel_indexes]
-        pixels = pixels[kp_pixel_indexes]
+            picked_vertices = vis.pick_points(x, y, self.ray_size, self.ray_size)
+            picked_vertices = [picked_vertices[i] for i in range(len(picked_vertices))]
 
-        # do the actual ray-mesh queries
-        points, index_ray, index_tri = mesh.ray.intersects_location(origins, vectors, multiple_hits=False)
+            if len(picked_vertices) == 0:
+                continue
 
-        # create result keypoints 3d
-        result = []
-        for i, index in enumerate(index_ray):
-            # i is the point index, index the ray index
-            position = points[i]
-            kp = keypoints[index]
-            result.append(KeyPoint3(kp.index, position[0], position[1], position[2]))
+            positions = np.stack([vertices[vi] for vi in picked_vertices])
+            avg_position = np.mean(positions, axis=0)
+
+            result.append(KeyPoint3(kp.index, avg_position[0], avg_position[1], avg_position[2]))
 
         # annotate 3d keypoints
         if self.debug:
-            self._annotate_keypoints_3d(scene, mesh, result, color=(255, 0, 0))
+            self._annotate_keypoints_3d(f"{view.name}: 3D Key Points", mesh, result, color=(255, 0, 0))
 
         return result
 
-    def _set_scene_rotation(self, scene, mesh, angle):
-        scene.camera_transform = scene.camera.look_at(
-            points=mesh.vertices,
-            distance=max(mesh.bounding_box.primitive.extents) * self.camera_distance,
-            rotation=trimesh.transformations.euler_matrix(0, radians(angle), 0))
+    @staticmethod
+    def _set_scene_rotation(vis: o3d.visualization.VisualizerWithVertexSelection, angle_x: float):
+        vis.reset_view_point(True)
+        ctr: o3d.visualization.ViewControl = vis.get_view_control()
+        ctr.rotate(2000.0 / 360.0 * angle_x, 0)
 
     def _get_pixel_index(self, x: int, y: int) -> int:
         return round(self._get_render_height() * x + y)
@@ -164,22 +186,24 @@ class Muke(object):
     def _get_render_height(self):
         return self.width * self.pixel_density
 
-    @staticmethod
-    def _annotate_keypoints_3d(scene, mesh, keypoints: [KeyPoint3], size: float = 0.01, color=(0, 255, 0)):
+    def _annotate_keypoints_3d(self, title: str, mesh: o3d.geometry.TriangleMesh, keypoints: [KeyPoint3],
+                               size: float = 0.005, color=(0, 255, 0)):
         # calculate size
-        bb = mesh.bounding_box.primitive.extents
-        box_size = max(bb) * size
+        bb: o3d.geometry.AxisAlignedBoundingBox = mesh.get_axis_aligned_bounding_box()
+        bb_size = bb.get_max_bound() - bb.get_min_bound()
+        box_size = max(bb_size) * size
 
+        meshes = [mesh]
         for kp in keypoints:
-            mat = trimesh.transformations.compose_matrix(translate=[kp.x, kp.y, kp.z])
-            marker = trimesh.creation.box([box_size, box_size, box_size], mat)
-            marker.visual.face_colors = color
-            scene.add_geometry(marker)
+            marker: o3d.geometry.TriangleMesh = o3d.geometry.TriangleMesh.create_sphere(radius=box_size, resolution=5)
+            marker.translate(np.array([kp.x, kp.y, kp.z]))
+            marker.paint_uniform_color(np.array(list(color)) / 255.0)
+            meshes.append(marker)
 
-    def _annotate_keypoints_2d(self, image: Image, keypoints: [KeyPoint2], size: int = 5, color=(0, 255, 0)):
-        hf = size * 0.5
-        draw = ImageDraw.Draw(image)
+        o3d.visualization.draw_geometries(meshes, title, width=self.width, height=self.height)
+
+    def _annotate_keypoints_2d(self, image: np.ndarray, keypoints: [KeyPoint2], size: int = 15, color=(0, 255, 0)):
         for kp in keypoints:
             x, y = self._get_transformed_coordinates(kp)
-            draw.ellipse([x - hf, y - hf, x + hf, y + hf], outline=color, width=2)
-            draw.text((x + hf, y + hf), "%d" % kp.index, fill=color)
+            cv2.drawMarker(image, (x, y), color, cv2.MARKER_CROSS, size, 1)
+            cv2.putText(image, f"{kp.index}", (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1, cv2.LINE_AA)
