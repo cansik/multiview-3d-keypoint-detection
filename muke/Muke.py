@@ -154,7 +154,10 @@ class Muke(object):
             picked_vertices = vis.pick_points(x, y, self.ray_size, self.ray_size)
             # todo: replace this with an actual position estimation (raycasting) instead of a vertex
             picked_vertices = vis.pick_points(x - half_ray_size, y - half_ray_size, self.ray_size, self.ray_size)
-            vis.add_picked_points(picked_vertices)
+
+            if self.debug:
+                vis.add_picked_points(picked_vertices)
+
             picked_vertices = [picked_vertices[i] for i in range(len(picked_vertices))]
 
             if len(picked_vertices) == 0:
