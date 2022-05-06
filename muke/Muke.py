@@ -171,6 +171,47 @@ class Muke(object):
         # reset view state
         self._set_scene_rotation(vis, -view.rotation)
 
+        # raycast scene from backside if infinity ray is activated
+        if view.infinite_ray or True:
+            mesh_dimensions = mesh.get_max_bound() - mesh.get_min_bound()
+            max_z = mesh_dimensions[2]
+
+            # create rays (from back to front)
+            rays = [[kp.x, kp.y, kp.z - (max_z * 2), 0.0, 0.0, (max_z * 3)] for kp in result]
+
+            # render test rays
+            def render_rays():
+                pts = []
+                lines = []
+                for i, ray in enumerate(rays):
+                    pts.append(ray[:3])
+                    pts.append([ray[0] + ray[3], ray[1] + ray[4], ray[2] + ray[5]])
+                    lines.append([i * 2, i * 2 + 1])
+
+                ls = o3d.geometry.LineSet(o3d.utility.Vector3dVector(np.array(pts)),
+                                          o3d.utility.Vector2iVector(np.array(lines)))
+                o3d.visualization.draw_geometries([mesh, ls], window_name="Rays")
+
+            # render_rays()
+
+            # shoot rays
+            t_mesh = o3d.t.geometry.TriangleMesh.from_legacy(mesh)
+            scene = o3d.t.geometry.RaycastingScene()
+            scene.add_triangles(t_mesh)
+            ans = scene.cast_rays(o3d.core.Tensor([rays], dtype=o3d.core.Dtype.Float32))
+
+            back_vertex_ids = ans["primitive_ids"].numpy()[0]
+
+            # calculate new mean positions
+            for i, kp in enumerate(result):
+                front_position = np.array([kp.x, kp.y, kp.z], dtype=np.float)
+                back_position = vertices[back_vertex_ids[i]]
+                average_position = np.average(np.stack([front_position, back_position]), axis=0)
+
+                kp.x = float(average_position[0])
+                kp.y = float(average_position[1])
+                kp.z = float(average_position[2])
+
         # annotate 3d keypoints
         if self.debug:
             pass
