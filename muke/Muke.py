@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 import open3d as o3d
 
+from muke.Lines import Lines
 from muke.detector.BaseDetector import BaseDetector
 from muke.detector.KeyPoint2 import KeyPoint2
 from muke.model.DetectionView import DetectionView
@@ -177,40 +178,53 @@ class Muke(object):
             max_z = mesh_dimensions[2]
 
             # create rays (from back to front)
-            rays = [[kp.x, kp.y, kp.z - (max_z * 2), 0.0, 0.0, (max_z * 3)] for kp in result]
+            rays = [[kp.x, kp.y, kp.z - max_z, 0.0, 0.0, max_z] for kp in result]
 
             # render test rays
             def render_rays():
-                pts = []
-                lines = []
+                lines = Lines()
                 for i, ray in enumerate(rays):
-                    pts.append(ray[:3])
-                    pts.append([ray[0] + ray[3], ray[1] + ray[4], ray[2] + ray[5]])
-                    lines.append([i * 2, i * 2 + 1])
+                    lines.add_line(ray[:3], [ray[0] + ray[3], ray[1] + ray[4], ray[2] + ray[5]])
+                o3d.visualization.draw_geometries([mesh, lines.create_line_set()], window_name="Rays")
 
-                ls = o3d.geometry.LineSet(o3d.utility.Vector3dVector(np.array(pts)),
-                                          o3d.utility.Vector2iVector(np.array(lines)))
-                o3d.visualization.draw_geometries([mesh, ls], window_name="Rays")
-
-            # render_rays()
+            render_rays()
 
             # shoot rays
             t_mesh = o3d.t.geometry.TriangleMesh.from_legacy(mesh)
             scene = o3d.t.geometry.RaycastingScene()
             scene.add_triangles(t_mesh)
-            ans = scene.cast_rays(o3d.core.Tensor([rays], dtype=o3d.core.Dtype.Float32))
+            ans = scene.cast_rays(o3d.core.Tensor(rays, dtype=o3d.core.Dtype.Float32))
 
-            back_vertex_ids = ans["primitive_ids"].numpy()[0]
+            back_vertex_ids = ans["primitive_ids"].numpy()
 
             # calculate new mean positions
+            lines = Lines()
+            markers = []
             for i, kp in enumerate(result):
                 front_position = np.array([kp.x, kp.y, kp.z], dtype=np.float)
                 back_position = vertices[back_vertex_ids[i]]
+
+                markers.append([front_position, back_position])
+                lines.add_line(front_position, back_position)
+
                 average_position = np.average(np.stack([front_position, back_position]), axis=0)
 
                 kp.x = float(average_position[0])
                 kp.y = float(average_position[1])
                 kp.z = float(average_position[2])
+
+            meshes = [o3d.geometry.LineSet.create_from_triangle_mesh(mesh), lines.create_line_set()]
+            for ms in markers:
+                color = (255, 0, 0)
+                for i, m in enumerate(ms):
+                    marker: o3d.geometry.TriangleMesh = o3d.geometry.TriangleMesh.create_sphere(radius=0.01,
+                                                                                                resolution=5)
+                    marker.translate(m)
+                    marker.paint_uniform_color(np.array(list(color)) / 255.0)
+                    meshes.append(marker)
+                    color = (0, 0, 255)
+
+            o3d.visualization.draw_geometries(meshes, window_name="Point Pairs")
 
         # annotate 3d keypoints
         if self.debug:
