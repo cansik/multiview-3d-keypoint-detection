@@ -60,7 +60,6 @@ class Muke(object):
 
         def render(v):
             if len(view_stack) == 0:
-                # vis.close()
                 v.close()
                 vis.destroy_window()
                 return
@@ -187,7 +186,7 @@ class Muke(object):
                     lines.add_line(ray[:3], [ray[0] + ray[3], ray[1] + ray[4], ray[2] + ray[5]])
                 o3d.visualization.draw_geometries([mesh, lines.create_line_set()], window_name="Rays")
 
-            render_rays()
+            # render_rays()
 
             # shoot rays
             t_mesh = o3d.t.geometry.TriangleMesh.from_legacy(mesh)
@@ -195,14 +194,23 @@ class Muke(object):
             scene.add_triangles(t_mesh)
             ans = scene.cast_rays(o3d.core.Tensor(rays, dtype=o3d.core.Dtype.Float32))
 
-            back_vertex_ids = ans["primitive_ids"].numpy()
+            hit_triangles = ans["primitive_ids"].numpy()
+            hit_uvs = ans["primitive_uvs"].numpy()
+            triangles = np.asarray(mesh.triangles)
+
+            back_positions = []
+            for i in range(len(hit_triangles)):
+                triangle = triangles[hit_triangles[i]]
+                barycenter = np.average(np.take(vertices, triangle, axis=0), axis=0)
+                # todo: add hit uv's (but how is it rotated?)
+                back_positions.append(barycenter)
 
             # calculate new mean positions
             lines = Lines()
             markers = []
             for i, kp in enumerate(result):
                 front_position = np.array([kp.x, kp.y, kp.z], dtype=np.float)
-                back_position = vertices[back_vertex_ids[i]]
+                back_position = back_positions[i]
 
                 markers.append([front_position, back_position])
                 lines.add_line(front_position, back_position)
@@ -224,7 +232,7 @@ class Muke(object):
                     meshes.append(marker)
                     color = (0, 0, 255)
 
-            o3d.visualization.draw_geometries(meshes, window_name="Point Pairs")
+            # o3d.visualization.draw_geometries(meshes, window_name="Point Pairs")
 
         # annotate 3d keypoints
         if self.debug:
