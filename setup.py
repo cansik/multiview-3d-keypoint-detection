@@ -2,11 +2,11 @@ from pathlib import Path
 
 from setuptools import setup, find_packages
 
-NAME = 'muke'
+NAME = "muke"
 
 required_packages = find_packages(exclude=["test"])
 
-with open('requirements.txt') as f:
+with open("requirements.txt") as f:
     required = f.read().splitlines()
 
 # read readme
@@ -15,19 +15,19 @@ long_description = (current_dir / "README.md").read_text()
 
 setup(
     name=NAME,
-    version='0.2.0b1',
+    version="0.2.1",
     packages=required_packages,
-    url='https://github.com/cansik/multiview-3d-keypoint-detection',
-    license='MIT License',
-    author='Florian Bruggisser',
-    author_email='github@broox.ch',
-    description='A simple approach to detect 3d keypoints by using 2d estimation methods and multiview rendering.',
+    url="https://github.com/cansik/multiview-3d-keypoint-detection",
+    license="MIT License",
+    author="Florian Bruggisser",
+    author_email="github@broox.ch",
+    description="A simple approach to detect 3d keypoints by using 2d estimation methods and multiview rendering.",
     long_description=long_description,
     long_description_content_type="text/markdown",
     install_requires=required,
     entry_points={
-        'console_scripts': [
-            'muke = muke.__main__:main',
+        "console_scripts": [
+            "muke = muke.__main__:main",
         ],
     },
 )
