@@ -1,3 +1,6 @@
+import logging
+from typing import List
+
 import cv2
 import numpy as np
 import open3d as o3d
@@ -36,11 +39,11 @@ class Muke(object):
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.detector.release()
 
-    def detect_file(self, mesh_path: str, views: [DetectionView], post_processing: bool = True) -> [KeyPoint3]:
+    def detect_file(self, mesh_path: str, views: List[DetectionView], post_processing: bool = True) -> List[KeyPoint3]:
         mesh = o3d.io.read_triangle_mesh(mesh_path, enable_post_processing=post_processing)
         return self.detect(mesh, views)
 
-    def detect(self, mesh: o3d.geometry.TriangleMesh, views: [DetectionView]) -> [KeyPoint3]:
+    def detect(self, mesh: o3d.geometry.TriangleMesh, views: List[DetectionView]) -> List[KeyPoint3]:
         # setup scene
         vis = o3d.visualization.VisualizerWithVertexSelection()
         vis.create_window(width=self.width, height=self.height, visible=self.display)
@@ -104,10 +107,10 @@ class Muke(object):
             summed_error += delta
 
             if self.debug:
-                print("[%02d]:\t%d\t(error: %.4f)" % (index, vertex_index, delta))
+                logging.info("[%02d]:\t%d\t(error: %.4f)" % (index, vertex_index, delta))
 
-        print("estimated %d key-points (error total: %.4f avg: %.4f)"
-              % (len(keypoints), summed_error, summed_error / max(1.0, len(keypoints))))
+        logging.info("estimated %d key-points (error total: %.4f avg: %.4f)"
+                     % (len(keypoints), summed_error, summed_error / max(1.0, len(keypoints))))
 
         if self.display:
             self._annotate_keypoints_3d("Result", mesh, keypoints)
@@ -116,7 +119,7 @@ class Muke(object):
 
     def _detect_view(self, vis: o3d.visualization.VisualizerWithVertexSelection,
                      mesh: o3d.geometry.TriangleMesh,
-                     view: DetectionView) -> [KeyPoint3]:
+                     view: DetectionView) -> List[KeyPoint3]:
         # apply view state
         self._set_scene_rotation(vis, view.rotation)
 
@@ -254,7 +257,7 @@ class Muke(object):
 
     def _get_transformed_coordinates(self, keypoint: [KeyPoint2]) -> (int, int):
         return round(keypoint.x * self._get_render_width()), \
-               round(keypoint.y * self._get_render_height())
+            round(keypoint.y * self._get_render_height())
 
     def _get_render_width(self):
         return self.width * self.pixel_density

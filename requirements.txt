@@ -8,4 +8,4 @@ scipy
 
 # pose estimation
 mediapipe-silicon; platform_system == "Darwin" and platform.machine == 'arm64'
-mediapipe; platform_system != "Darwin" and platform.machine != 'arm64'
+mediapipe; platform_system != "Darwin" or platform.machine != 'arm64'
