@@ -175,7 +175,7 @@ class Muke(object):
         self._set_scene_rotation(vis, -view.rotation)
 
         # raycast scene from backside if infinity ray is activated
-        if view.infinite_ray or True:
+        if view.infinite_ray:
             mesh_dimensions = mesh.get_max_bound() - mesh.get_min_bound()
             max_z = mesh_dimensions[2]
 
@@ -235,7 +235,8 @@ class Muke(object):
                     meshes.append(marker)
                     color = (0, 0, 255)
 
-            # o3d.visualization.draw_geometries(meshes, window_name="Point Pairs")
+            if self.debug:
+                o3d.visualization.draw_geometries(meshes, window_name="Point Pairs")
 
         # annotate 3d keypoints
         if self.debug:
