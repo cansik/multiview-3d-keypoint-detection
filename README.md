@@ -5,6 +5,8 @@ Basically the 3d model is rendered from various angles (views) and a 2d key-poin
 ![Visualisation](documentation/visualisation.png)
 *Muke Process*
 
+The project was originally implemented to have a simple and fast solution for 3D keypoints detection for retopology purposes. However, it can also be used for any other application where 3D keypoints are needed, such as rigging, animation, etc.
+
 ### Installation
 
 To install the package use the following pip command:
@@ -14,6 +16,7 @@ pip install muke
 ```
 
 ### Usage
+Muke can be used as a command line tool to extract the keypoints in a specific format (f.e. [Wrap3](https://www.russian3dscanner.com/)). For that a configuration has to be created which defines the detection parameters as well as the rendering views.
 
 #### Configuration
 
@@ -39,7 +42,7 @@ Example configuration:
 }
 ```
 
-Example on how to create a range (`skip` is optional):
+To select a range of keypoint indices, it is possible to define a `start` and `end` (included) index. It is also possible to skip certain indices in that range. Here an example on how to create a range (`skip` is optional):
 
 ```json
 {
@@ -114,6 +117,30 @@ with Muke(MediaPipePoseDetector()) as m:
 # present results
 for kp in result:
     print(f"KP {kp.index}: {kp.x:.2f} {kp.y:.2f} {kp.z:.2f}")
+```
+
+### Detectors
+It is possible to implement custom keypoint detectors. The custom detector has to implement the `BaseDetector` interface as shown in the following example.
+
+```python
+import numpy as np
+
+from muke.detector.BaseDetector import BaseDetector
+from muke.detector.KeyPoint2 import KeyPoint2
+
+
+class CustomDetector(BaseDetector):
+    def setup(self):
+        # todo: initialize the custom detector
+        pass
+
+    def detect(self, image: np.ndarray) -> [KeyPoint2]:
+        # todo: implement the custom 2d keypoint detection 
+        pass
+
+    def release(self):
+        # todo: clean up allocated resources
+        pass
 ```
 
 ### About
