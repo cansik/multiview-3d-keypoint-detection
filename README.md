@@ -1,5 +1,6 @@
 # Multiview 3D Keypoint Detection (Muke)
 A simple approach to detect 3d keypoints by using 2d estimation methods and multiview rendering. The idea is based on the blender project for [automatic keypoint retopology](https://github.com/cansik/auto-keypoint-retopology).
+Basically the 3d model is rendered from various angles (views) and a 2d key-point detection is applied. For each detected keypoint a ray-cast is performed to detect the intersection point with the mesh surface. In the end all intersection of the different views are combined to calculate the actual 3d position of the keypoint inside the mesh. It is possible to define view dependent keypoint indices to extract only the ones that are visible in the current rendering. Muke return a list of 3d keypoints containing the position as well as the closest vertex index.
 
 ![Visualisation](documentation/visualisation.png)
 *Muke Process*
