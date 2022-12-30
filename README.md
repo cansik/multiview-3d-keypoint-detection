@@ -9,11 +9,11 @@ Basically, the 3D model is rendered from different angles (views) and a 2D keypo
 
 Direct 3D keypoint recognition using mesh data would be more accurate, but it is still difficult to train 3D models or find already trained weights for them. By using 2D recognition alone, it is possible to use the entire zoo of keypoint image recognition models. Muke comes with a built-in [MediaPipe face](https://google.github.io/mediapipe/solutions/face_mesh.html) and [pose](https://google.github.io/mediapipe/solutions/pose.html) detector, but can be extended with any other 2D keypoint detection framework.
 
-The project was originally implemented to have a simple and fast solution for 3D keypoints detection for retopology purposes. However, it can also be used for any other application where 3D keypoints are needed, such as rigging, animation, etc.
-
 ![Head Example](documentation/head.png)
 
 *3D Facial Landmark Estimation (Human Head by [VistaPrime](https://sketchfab.com/3d-models/human-head-f46d952886ae4a8c8851341b810bba43) [CC Attribution](https://creativecommons.org/licenses/by/4.0/))*
+
+The project was originally implemented to have a simple and fast solution for 3D keypoints detection for retopology purposes. However, it can also be used for any other application where 3D keypoints are needed, such as rigging, animation, etc.
 
 ### Installation
 
