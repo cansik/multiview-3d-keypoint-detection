@@ -12,4 +12,7 @@ class MediaPipePoseDetector(MediaPipeBaseDetector):
         return mp_model.Pose(static_image_mode=True)
 
     def get_landmarks(self, results):
+        if results.pose_landmarks is None:
+            raise Exception("No pose detected on rendering. Please check the render options.")
+
         return results.pose_landmarks

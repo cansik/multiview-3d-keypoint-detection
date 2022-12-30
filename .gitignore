@@ -5,3 +5,4 @@ temp
 assets/person_keypoints.json
 *.egg-info
 .DS_Store
+assets/*.txt

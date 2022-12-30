@@ -9,6 +9,10 @@ Basically, the 3D model is rendered from different angles (views) and a 2D keypo
 
 The project was originally implemented to have a simple and fast solution for 3D keypoints detection for retopology purposes. However, it can also be used for any other application where 3D keypoints are needed, such as rigging, animation, etc.
 
+![Head Example](documentation/head.png)
+
+*3D Facial Landmark Estimation (Human Head by [VistaPrime](https://sketchfab.com/3d-models/human-head-f46d952886ae4a8c8851341b810bba43) [CC Attribution](https://creativecommons.org/licenses/by/4.0/))*
+
 ### Installation
 
 To install the package use the following pip command:
@@ -55,24 +59,26 @@ To select a range of keypoint indices, it is possible to define a `start` and `e
 ```
 
 #### Demo
+Quickly try out Muke by using the following commands.
 
 ```bash
 python -m muke assets/person.ply --display --resolution 1024
 ```
 
 ```bash
-python -m muke temp/AlexedWrapped.obj --display --resolution 1024 --detector media-pipe-face
+python -m muke assets/human_head.obj --display --resolution 1024 --detector media-pipe-face
 ```
 
 ```bash
-python -m muke temp/AlexedWrapped.obj --display --config config/media-pipe-face.json
+python -m muke assets/human_head.obj --config config/media-pipe-face.json --display
 ```
 
 #### Help
 
 ```bash
-usage: muke [-h] [--detector {media-pipe-pose,media-pipe-face}] [--resolution RESOLUTION] [--generator {wrap3}]
-            [--config CONFIG] [--display] [--debug]
+usage: muke [-h] [--detector {media-pipe-pose,media-pipe-face}]
+            [--resolution RESOLUTION] [--generator {wrap3}] [--config CONFIG]
+            [--load-raw] [--display] [--debug]
             input
 
 Detects keypoint locations in a 3d model.
@@ -83,11 +89,14 @@ positional arguments:
 optional arguments:
   -h, --help            show this help message and exit
   --detector {media-pipe-pose,media-pipe-face}
-                        Detection method for 2d keypoint detection (default: media-pipe-pose).
+                        Detection method for 2d keypoint detection (default:
+                        media-pipe-pose).
   --resolution RESOLUTION
                         Render resolution for each view pass (default: 512).
-  --generator {wrap3}   Generator methods for output generation (default: wrap3).
+  --generator {wrap3}   Generator methods for output generation (default:
+                        wrap3).
   --config CONFIG       Path to the configuration JSON file.
+  --load-raw            Load mesh raw without post-processing (default: False)
   --display             Shows result rendering with keypoints (default: False)
   --debug               Shows debug frames and information (default: False)
 ```

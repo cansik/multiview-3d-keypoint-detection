@@ -13,7 +13,7 @@
     },
     {
       "name": "left",
-      "rotation": -15,
+      "rotation": 15,
       "keypoints": [
         76, 306,
         129, 33, 133
@@ -21,7 +21,7 @@
     },
     {
       "name": "right",
-      "rotation": 15,
+      "rotation": -15,
       "keypoints": [
         76, 306,
         358, 263, 362

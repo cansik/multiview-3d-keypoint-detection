@@ -12,4 +12,7 @@ class MediaPipeFaceDetector(MediaPipeBaseDetector):
         return mp_model.FaceMesh(static_image_mode=True)
 
     def get_landmarks(self, results):
+        if results.multi_face_landmarks is None:
+            raise Exception("No faces detected on rendering. Please check the render options.")
+
         return results.multi_face_landmarks[0]

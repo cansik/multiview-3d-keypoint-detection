@@ -1,5 +1,5 @@
 import logging
-from typing import List
+from typing import List, Sequence, Optional
 
 import cv2
 import numpy as np
@@ -14,23 +14,27 @@ from muke.model.KeyPoint3 import KeyPoint3
 from scipy.spatial import distance
 
 
-class Muke(object):
+class Muke:
     def __init__(self, detector: BaseDetector, resolution: int = 512, display=False, debug=False):
-        self.detector = detector
+        self.detector: BaseDetector = detector
 
-        self.display = display
-        self.debug = debug
+        self.display: bool = display
+        self.debug: bool = debug
 
-        self.width = resolution
-        self.height = resolution
-        self.pixel_density = 1.0
+        self.width: int = resolution
+        self.height: int = resolution
+        self.pixel_density: float = 1.0
 
-        self.ray_size = 5
+        self.ray_size: float = 5
 
-        self.camera_zoom = 0.55
-        self.camera_fov = -90  # by default orthographic
+        self.camera_zoom: float = 0.55
+        self.camera_fov: float = -90  # by default orthographic
 
-        self.background_color = [255, 255, 255]
+        self.background_color: Sequence[int] = [255, 255, 255]
+
+        self.mesh_shade_option: Optional[o3d.visualization.MeshShadeOption] = None
+        self.mesh_color_option: Optional[o3d.visualization.MeshColorOption] = None
+        self.light_on: bool = True
 
     def __enter__(self):
         self.detector.setup()
@@ -39,8 +43,15 @@ class Muke(object):
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.detector.release()
 
-    def detect_file(self, mesh_path: str, views: List[DetectionView], post_processing: bool = True) -> List[KeyPoint3]:
-        mesh = o3d.io.read_triangle_mesh(mesh_path, enable_post_processing=post_processing)
+    def detect_file(self, mesh_path: str, views: List[DetectionView],
+                    post_processing: bool = True) -> List[KeyPoint3]:
+        mesh: o3d.geometry.TriangleMesh = o3d.io.read_triangle_mesh(mesh_path, enable_post_processing=post_processing)
+
+        if post_processing:
+            # check if mesh has colors or triangle normals -> otherwise calculate them
+            if not mesh.has_triangle_normals() and not mesh.has_vertex_colors() and not mesh.has_textures():
+                mesh.compute_triangle_normals()
+
         return self.detect(mesh, views)
 
     def detect(self, mesh: o3d.geometry.TriangleMesh, views: List[DetectionView]) -> List[KeyPoint3]:
@@ -56,6 +67,14 @@ class Muke(object):
         opt: o3d.visualization.RenderOption = vis.get_render_option()
         opt.background_color = np.asarray(self.background_color)
         opt.show_coordinate_frame = False
+
+        if self.mesh_shade_option is not None:
+            opt.mesh_shade_option = self.mesh_shade_option
+
+        if self.mesh_color_option is not None:
+            opt.mesh_color_option = self.mesh_color_option
+
+        opt.light_on = self.light_on
 
         # detect keypoints
         detections = {}
@@ -142,7 +161,7 @@ class Muke(object):
         if self.debug:
             preview_image = image_np.copy()
             preview_image = cv2.cvtColor(preview_image, cv2.COLOR_RGB2BGR)
-            self._annotate_keypoints_2d(preview_image, keypoints)
+            self._annotate_keypoints_2d(preview_image, keypoints, weight=2)
             cv2.imshow(f"{view.name}: 2D Key Points", preview_image)
             cv2.waitKey(0)
             cv2.destroyAllWindows()
@@ -150,6 +169,7 @@ class Muke(object):
         # raycast from camera
         vertices = np.asarray(mesh.vertices)
         result = []
+
         for kp in keypoints:
             x, y = self._get_transformed_coordinates(kp)
             half_ray_size = self.ray_size * 0.5
@@ -159,7 +179,8 @@ class Muke(object):
             picked_vertices = vis.pick_points(x - half_ray_size, y - half_ray_size, self.ray_size, self.ray_size)
 
             if self.debug:
-                vis.add_picked_points(picked_vertices)
+                pass
+                # vis.add_picked_points(picked_vertices)
 
             picked_vertices = [picked_vertices[i] for i in range(len(picked_vertices))]
 
@@ -282,8 +303,11 @@ class Muke(object):
 
         o3d.visualization.draw_geometries(meshes, title, width=self.width, height=self.height)
 
-    def _annotate_keypoints_2d(self, image: np.ndarray, keypoints: [KeyPoint2], size: int = 15, color=(0, 255, 0)):
+    def _annotate_keypoints_2d(self, image: np.ndarray, keypoints: [KeyPoint2],
+                               size: int = 15, color=(20, 255, 255), weight: int = 1):
+
+        hs = int(round(size * 0.5))
         for kp in keypoints:
             x, y = self._get_transformed_coordinates(kp)
-            cv2.drawMarker(image, (x, y), color, cv2.MARKER_CROSS, size, 1)
-            cv2.putText(image, f"{kp.index}", (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1, cv2.LINE_AA)
+            cv2.drawMarker(image, (x, y), color, cv2.MARKER_TILTED_CROSS, size, weight)
+            cv2.putText(image, f"{kp.index}", (x + hs, y + hs), cv2.FONT_HERSHEY_PLAIN, 1, color, weight, cv2.LINE_AA)

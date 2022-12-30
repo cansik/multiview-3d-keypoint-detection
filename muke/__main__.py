@@ -20,9 +20,11 @@ def parse_args():
     parser.add_argument("--generator", default=generator_methods[0], choices=generator_methods,
                         help="Generator methods for output generation (default: %s)." % generator_methods[0])
     parser.add_argument("--config", required=False, help="Path to the configuration JSON file.")
-    parser.add_argument("--display", action='store_true',
+    parser.add_argument("--load-raw", action="store_true",
+                        help="Load mesh raw without post-processing (default: False)")
+    parser.add_argument("--display", action="store_true",
                         help="Shows result rendering with keypoints (default: False)")
-    parser.add_argument("--debug", action='store_true',
+    parser.add_argument("--debug", action="store_true",
                         help="Shows debug frames and information (default: False)")
 
     args = parser.parse_args()
@@ -49,7 +51,9 @@ def main():
               display=args.display,
               debug=args.debug) as muke:
 
-        results = muke.detect_file(args.input, views=config.views)
+        results = muke.detect_file(args.input,
+                                   post_processing=not args.load_raw,
+                                   views=config.views)
         output.generate(args.input, results)
 
 
