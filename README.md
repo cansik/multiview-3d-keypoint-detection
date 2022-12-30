@@ -1,5 +1,5 @@
 # Multiview 3D Keypoint Detection (Muke) [![PyPI](https://img.shields.io/pypi/v/muke)](https://pypi.org/project/muke/)
-A simple approach to detect 3d keypoints by using 2d estimation methods and multiview rendering, based on the blender project for [automatic keypoint retopology](https://github.com/cansik/auto-keypoint-retopology).
+A simple approach to 3D keypoint detection using 2D estimation methods and multiview rendering, based on the blender project for [automatic keypoint retopology](https://github.com/cansik/auto-keypoint-retopology).
 
 Basically, the 3D model is rendered from different angles (views) and a 2D keypoint detection is performed. For each detected keypoint, a ray-cast is performed to determine the intersection point with the mesh surface. In the end, all intersection points of the different views are combined to calculate the current 3D position of the keypoint within the mesh. It is possible to define view-dependent keypoint indices to extract only the points that are visible in the current rendering. Muke returns a list of 3D keypoints containing both the position and the nearest vertex index.
 
