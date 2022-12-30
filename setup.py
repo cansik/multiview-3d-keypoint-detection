@@ -21,7 +21,7 @@ setup(
     license="MIT License",
     author="Florian Bruggisser",
     author_email="github@broox.ch",
-    description="A simple approach to detect 3d keypoints by using 2d estimation methods and multiview rendering.",
+    description="A simple approach to 3D keypoint detection using 2D estimation methods and multiview rendering.",
     long_description=long_description,
     long_description_content_type="text/markdown",
     install_requires=required,
