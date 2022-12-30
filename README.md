@@ -1,8 +1,10 @@
 # Multiview 3D Keypoint Detection (Muke) [![PyPI](https://img.shields.io/pypi/v/muke)](https://pypi.org/project/muke/)
-A simple approach to detect 3d keypoints by using 2d estimation methods and multiview rendering. The idea is based on the blender project for [automatic keypoint retopology](https://github.com/cansik/auto-keypoint-retopology).
-Basically the 3d model is rendered from various angles (views) and a 2d key-point detection is applied. For each detected keypoint a ray-cast is performed to detect the intersection point with the mesh surface. In the end all intersection of the different views are combined to calculate the actual 3d position of the keypoint inside the mesh. It is possible to define view dependent keypoint indices to extract only the ones that are visible in the current rendering. Muke return a list of 3d keypoints containing the position as well as the closest vertex index.
+A simple approach to detect 3d keypoints by using 2d estimation methods and multiview rendering, based on the blender project for [automatic keypoint retopology](https://github.com/cansik/auto-keypoint-retopology).
+
+Basically, the 3D model is rendered from different angles (views) and a 2D keypoint detection is performed. For each detected keypoint, a ray-cast is performed to determine the intersection point with the mesh surface. In the end, all intersection points of the different views are combined to calculate the current 3D position of the keypoint within the mesh. It is possible to define view-dependent keypoint indices to extract only the points that are visible in the current rendering. Muke returns a list of 3D keypoints containing both the position and the nearest vertex index.
 
 ![Visualisation](documentation/visualisation.png)
+
 *Muke Process*
 
 The project was originally implemented to have a simple and fast solution for 3D keypoints detection for retopology purposes. However, it can also be used for any other application where 3D keypoints are needed, such as rigging, animation, etc.
@@ -16,7 +18,7 @@ pip install muke
 ```
 
 ### Usage
-Muke can be used as a command line tool to extract the keypoints in a specific format (f.e. [Wrap3](https://www.russian3dscanner.com/)). For that a configuration has to be created which defines the detection parameters as well as the rendering views.
+Muke can be used as a command line tool to extract the keypoints in a specific format (e.g. [Wrap3](https://www.russian3dscanner.com/)). For that a configuration has to be created which defines the detection parameters as well as the rendering views.
 
 #### Configuration
 
