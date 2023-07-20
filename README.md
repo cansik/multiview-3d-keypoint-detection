@@ -60,6 +60,9 @@ To select a range of keypoint indices, it is possible to define a `start` and `e
 }
 ```
 
+#### Infinite Ray
+Per view it is possible to set the `infinite-ray` value to `True` to shoot a ray through the mesh to infinity. Every intersection point with the mesh is used as a point to calculate the average center of the keypoint inside the mesh.
+
 #### Demo
 Quickly try out Muke by using the following commands.
 
@@ -79,8 +82,8 @@ python -m muke assets/human_head.obj --config config/media-pipe-face.json --disp
 
 ```bash
 usage: muke [-h] [--detector {media-pipe-pose,media-pipe-face}]
-            [--resolution RESOLUTION] [--generator {wrap3}] [--config CONFIG]
-            [--load-raw] [--display] [--debug]
+            [--resolution RESOLUTION] [--infinite-ray] [--generator {wrap3}]
+            [--config CONFIG] [--load-raw] [--display] [--debug]
             input
 
 Detects keypoint locations in a 3d model.
@@ -95,6 +98,8 @@ optional arguments:
                         media-pipe-pose).
   --resolution RESOLUTION
                         Render resolution for each view pass (default: 512).
+  --infinite-ray        Send ray through mesh to infinity and use average of
+                        intersections (default: False)
   --generator {wrap3}   Generator methods for output generation (default:
                         wrap3).
   --config CONFIG       Path to the configuration JSON file.

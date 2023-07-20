@@ -39,6 +39,9 @@ class MukeConfiguration(object):
                     skip = set(value.get("skip", []))
                     [view.keypoints.add(i) for i in range(start, end + 1) if i not in skip]
 
+            if "infinite-ray" in view_data:
+                view.infinite_ray = bool(view_data["infinite-ray"])
+
             views.append(view)
 
         if len(views) > 0:
@@ -51,6 +54,9 @@ class MukeConfiguration(object):
         MukeConfiguration._set_value_if_available(data, config, "detector", method=lambda x: MukeDetectors[x])
         MukeConfiguration._set_value_if_available(data, config, "generator", method=lambda x: MukeGenerators[x])
         MukeConfiguration._set_value_if_available(data, config, "resolution")
+
+        if data.infinite_ray:
+            config.views[0].infinite_ray = True
 
     @staticmethod
     def _set_value_if_available(source, target, name: str, method=lambda x: x):

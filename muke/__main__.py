@@ -17,6 +17,8 @@ def parse_args():
                         help="Detection method for 2d keypoint detection (default: %s)." % detection_methods[0])
     parser.add_argument("--resolution", default=MukeDefaultResolution, type=int,
                         help="Render resolution for each view pass (default: %d)." % MukeDefaultResolution)
+    parser.add_argument("--infinite-ray", action="store_true",
+                        help="Send ray through mesh to infinity and use average of intersections (default: False)")
     parser.add_argument("--generator", default=generator_methods[0], choices=generator_methods,
                         help="Generator methods for output generation (default: %s)." % generator_methods[0])
     parser.add_argument("--config", required=False, help="Path to the configuration JSON file.")

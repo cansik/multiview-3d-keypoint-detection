@@ -210,7 +210,8 @@ class Muke:
                     lines.add_line(ray[:3], [ray[0] + ray[3], ray[1] + ray[4], ray[2] + ray[5]])
                 o3d.visualization.draw_geometries([mesh, lines.create_line_set()], window_name="Rays")
 
-            # render_rays()
+            if self.debug:
+                render_rays()
 
             # shoot rays
             t_mesh = o3d.t.geometry.TriangleMesh.from_legacy(mesh)
@@ -233,7 +234,7 @@ class Muke:
             lines = Lines()
             markers = []
             for i, kp in enumerate(result):
-                front_position = np.array([kp.x, kp.y, kp.z], dtype=np.float)
+                front_position = np.array([kp.x, kp.y, kp.z], dtype=float)
                 back_position = back_positions[i]
 
                 markers.append([front_position, back_position])
