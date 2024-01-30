@@ -23,7 +23,7 @@ class GfxRenderer(BaseRenderer):
         self.scene = gfx.Scene()
 
         # setup camera
-        self.camera = gfx.OrthographicCamera(4)
+        self.camera = gfx.OrthographicCamera(1.1)
 
         # mesh
         self._gfx_mesh: Optional[gfx.Mesh] = None
@@ -40,6 +40,13 @@ class GfxRenderer(BaseRenderer):
             gfx_material = gfx.MeshBasicMaterial()
 
         self._gfx_mesh = gfx.Mesh(gfx_geometry, gfx_material)
+
+        # scale mesh to fill rendering
+        bbox = np.array(self._gfx_mesh.get_world_bounding_box(), np.float32)
+        size = np.abs(bbox[1] - bbox[0])
+        up_scale_ratio = 1 / float(np.max(size))
+        self._gfx_mesh.local.scale = np.array(np.full((3,), up_scale_ratio))
+
         self.scene.add(self._gfx_mesh)
 
     def render(self) -> np.ndarray:
@@ -76,6 +83,7 @@ class GfxRenderer(BaseRenderer):
         triangles = np.array(o3d_mesh.triangles, dtype=np.uint32)
 
         vertex_normals = np.array(o3d_mesh.vertex_normals, dtype=np.float32)
+        # vertex_colors = np.array(o3d_mesh.vertex_colors, dtype=np.float32)
         vertices = np.array(o3d_mesh.vertices, dtype=np.float32)
 
         return gfx.Geometry(
@@ -85,12 +93,15 @@ class GfxRenderer(BaseRenderer):
     @staticmethod
     def _open3d_to_gfx_material(o3d_material: rendering.MaterialRecord) -> gfx.Material:
         gfx_material = gfx.MeshBasicMaterial()
+        gfx_material.flat_shading = True
 
-        texture = np.array(o3d_material.albedo_img)
-        texture = texture[::-1, :, :]  # flip texture vertically
-        texture = texture.astype(np.float32) / 255.0
+        if o3d_material.albedo_img is not None:
+            texture = np.array(o3d_material.albedo_img)
+            texture = texture[::-1, :, :]  # flip texture vertically
+            texture = texture.astype(np.float32) / 255.0
 
-        tex = gfx.Texture(texture, dim=2)
-        gfx_material.map = tex
+            # todo: fix texture rendering
+            tex = gfx.Texture(texture, dim=2)
+            gfx_material.map = tex
 
         return gfx_material
