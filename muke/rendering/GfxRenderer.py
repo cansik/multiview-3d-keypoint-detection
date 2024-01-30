@@ -1,5 +1,6 @@
 from typing import Optional
 
+import cv2
 import numpy as np
 import pygfx as gfx
 import pylinalg as la
@@ -7,7 +8,7 @@ from open3d.cpu.pybind import geometry
 from open3d.cpu.pybind.visualization import rendering
 from wgpu.gui.offscreen import WgpuCanvas
 
-from muke.model.DetectionView import DetectionView
+from muke.model.Vertex import Vertex
 from muke.rendering.BaseRenderer import BaseRenderer
 
 
@@ -24,37 +25,72 @@ class GfxRenderer(BaseRenderer):
         # setup camera
         self.camera = gfx.OrthographicCamera(4)
 
+        # mesh
+        self._gfx_mesh: Optional[gfx.Mesh] = None
+
         # setup handler for rendering
         self.canvas.request_draw(lambda: self.renderer.render(self.scene, self.camera))
 
     def add_geometry(self, mesh: geometry.TriangleMesh, material: Optional[rendering.MaterialRecord]):
-        gfx_mesh = self._open3d_to_gfx_geometry(mesh)
-        material = gfx.MeshBasicMaterial()
-        cube = gfx.Mesh(gfx_mesh, material)
-        self.scene.add(cube)
+        gfx_geometry = self._open3d_to_gfx_geometry(mesh)
 
-        camera = gfx.OrthographicCamera(400)
-        camera.local.z = 400
+        if material is not None:
+            gfx_material = self._open3d_to_gfx_material(material)
+        else:
+            gfx_material = gfx.MeshBasicMaterial()
 
-        rot = la.quat_from_euler((0.5, 1.0), order="XY")
-        cube.local.rotation = la.quat_mul(rot, cube.local.rotation)
+        self._gfx_mesh = gfx.Mesh(gfx_geometry, gfx_material)
+        self.scene.add(self._gfx_mesh)
 
-    def render(self, view: DetectionView) -> np.ndarray:
-        return np.asarray(self.canvas.draw())
+    def render(self) -> np.ndarray:
+        image_rgba = np.asarray(self.canvas.draw())
+        return cv2.cvtColor(image_rgba, cv2.COLOR_BGRA2BGR)
+
+    def rotate_scene(self, x: float, y: float, z: float):
+        rot = la.quat_from_euler((x, y, z), order="XYZ")
+        self._gfx_mesh.local.rotation = la.quat_mul(rot, self._gfx_mesh.local.rotation)
+
+    def cast_ray(self, x: float, y: float) -> Optional[Vertex]:
+        u = x * self.width
+        v = y * self.height
+        info = self.renderer.get_pick_info((u, v))
+
+        wobject = info["world_object"]
+
+        if wobject is None:
+            return None
+
+        # lookup hit vertex
+        coords = info["face_coord"]
+        face_index = info["face_index"]
+
+        sub_index = np.argmax(coords)
+        vertex_index = int(wobject.geometry.indices.data[face_index][sub_index])
+        pos = wobject.geometry.positions.data[vertex_index]
+
+        return Vertex(vertex_index, *pos)
 
     @staticmethod
     def _open3d_to_gfx_geometry(o3d_mesh: geometry.TriangleMesh) -> gfx.Geometry:
-        geo = gfx.box_geometry(200, 200, 200)
-
-        triangle_material_ids = np.array(o3d_mesh.triangle_material_ids)
-        triangle_normals = np.array(o3d_mesh.triangle_normals)
         triangle_uvs = np.array(o3d_mesh.triangle_uvs, dtype=np.float32)
         triangles = np.array(o3d_mesh.triangles, dtype=np.uint32)
 
-        vertex_colors = np.array(o3d_mesh.vertex_colors, dtype=np.float32)
         vertex_normals = np.array(o3d_mesh.vertex_normals, dtype=np.float32)
         vertices = np.array(o3d_mesh.vertices, dtype=np.float32)
 
         return gfx.Geometry(
             indices=triangles, positions=vertices, normals=vertex_normals, texcoords=triangle_uvs
         )
+
+    @staticmethod
+    def _open3d_to_gfx_material(o3d_material: rendering.MaterialRecord) -> gfx.Material:
+        gfx_material = gfx.MeshBasicMaterial()
+
+        texture = np.array(o3d_material.albedo_img)
+        texture = texture[::-1, :, :]  # flip texture vertically
+        texture = texture.astype(np.float32) / 255.0
+
+        tex = gfx.Texture(texture, dim=2)
+        gfx_material.map = tex
+
+        return gfx_material

@@ -5,7 +5,7 @@ import numpy as np
 from open3d.cpu.pybind import geometry
 from open3d.cpu.pybind.visualization import rendering
 
-from muke.model.DetectionView import DetectionView
+from muke.model.Vertex import Vertex
 
 
 class BaseRenderer(ABC):
@@ -19,5 +19,13 @@ class BaseRenderer(ABC):
         pass
 
     @abstractmethod
-    def render(self, view: DetectionView) -> np.ndarray:
+    def rotate_scene(self, x: float, y: float, z: float):
+        pass
+
+    @abstractmethod
+    def render(self) -> np.ndarray:
+        pass
+
+    @abstractmethod
+    def cast_ray(self, x: float, y: float) -> Optional[Vertex]:
         pass

@@ -4,14 +4,16 @@ from typing import List, Sequence, Optional
 import cv2
 import numpy as np
 import open3d as o3d
+from open3d.cpu.pybind.visualization import rendering
+from scipy.spatial import distance
 
 from muke.Lines import Lines
 from muke.detector.BaseDetector import BaseDetector
 from muke.detector.KeyPoint2 import KeyPoint2
 from muke.model.DetectionView import DetectionView
 from muke.model.KeyPoint3 import KeyPoint3
-
-from scipy.spatial import distance
+from muke.rendering.BaseRenderer import BaseRenderer
+from muke.rendering.GfxRenderer import GfxRenderer
 
 
 class Muke:
@@ -45,59 +47,40 @@ class Muke:
 
     def detect_file(self, mesh_path: str, views: List[DetectionView],
                     post_processing: bool = True) -> List[KeyPoint3]:
-        mesh: o3d.geometry.TriangleMesh = o3d.io.read_triangle_mesh(mesh_path, enable_post_processing=post_processing)
+        model: rendering.TriangleMeshModel = o3d.io.read_triangle_model(mesh_path)
+
+        mesh_info: rendering.TriangleMeshModel.MeshInfo = model.meshes[0]
+        mesh = mesh_info.mesh
+        material = model.materials[mesh_info.material_idx]
 
         if post_processing:
             # check if mesh has colors or triangle normals -> otherwise calculate them
             if not mesh.has_triangle_normals() and not mesh.has_vertex_colors() and not mesh.has_textures():
                 mesh.compute_triangle_normals()
 
-        return self.detect(mesh, views)
+        return self.detect(mesh, views, material=material)
 
-    def detect(self, mesh: o3d.geometry.TriangleMesh, views: List[DetectionView]) -> List[KeyPoint3]:
-        # setup scene
-        vis = o3d.visualization.VisualizerWithVertexSelection()
-        vis.create_window(width=self.width, height=self.height, visible=self.display)
-        vis.add_geometry(mesh, reset_bounding_box=True)
+    def detect(self, mesh: o3d.geometry.TriangleMesh,
+               views: List[DetectionView],
+               material: Optional[rendering.MaterialRecord] = None) -> List[KeyPoint3]:
 
-        ctr: o3d.visualization.ViewControl = vis.get_view_control()
-        ctr.change_field_of_view(self.camera_fov)
-        ctr.set_zoom(self.camera_zoom)
-
-        opt: o3d.visualization.RenderOption = vis.get_render_option()
-        opt.background_color = np.asarray(self.background_color)
-        opt.show_coordinate_frame = False
-
-        if self.mesh_shade_option is not None:
-            opt.mesh_shade_option = self.mesh_shade_option
-
-        if self.mesh_color_option is not None:
-            opt.mesh_color_option = self.mesh_color_option
-
-        opt.light_on = self.light_on
+        # setup renderer
+        # todo: make this configurable
+        renderer: BaseRenderer = GfxRenderer(self.width, self.height)
+        renderer.add_geometry(mesh, material)
 
         # detect keypoints
         detections = {}
-        view_stack = views[::-1]
 
-        def render(v):
-            if len(view_stack) == 0:
-                v.close()
-                vis.destroy_window()
-                return
-
-            view = view_stack.pop()
-            keypoints = self._detect_view(vis, mesh, view)
+        # render
+        for view in views:
+            keypoints = self._detect_view(renderer, mesh, view)
 
             # add keypoints to dictionary
             for kp in keypoints:
                 if kp.index not in detections:
                     detections[kp.index] = []
                 detections[kp.index].append(kp)
-
-        # run with animation callback
-        vis.register_animation_callback(render)
-        vis.run()
 
         # setup raycasting scene
         t_mesh = o3d.t.geometry.TriangleMesh.from_legacy(mesh)
@@ -136,19 +119,14 @@ class Muke:
 
         return keypoints
 
-    def _detect_view(self, vis: o3d.visualization.VisualizerWithVertexSelection,
+    def _detect_view(self, renderer: BaseRenderer,
                      mesh: o3d.geometry.TriangleMesh,
                      view: DetectionView) -> List[KeyPoint3]:
         # apply view state
-        self._set_scene_rotation(vis, view.rotation)
+        renderer.rotate_scene(0, view.rotation, 0)
 
-        # offscreen renders
-        vis.poll_events()
-        vis.update_renderer()
-        data = np.asarray(vis.capture_screen_float_buffer())
-
-        # image to numpy
-        image_np = (data * 255).astype(np.uint8)
+        # render
+        image_np = renderer.render()
 
         # detect keypoints
         keypoints = self.detector.detect(image_np)
@@ -171,29 +149,33 @@ class Muke:
         result = []
 
         for kp in keypoints:
-            x, y = self._get_transformed_coordinates(kp)
             half_ray_size = self.ray_size * 0.5
 
-            picked_vertices = vis.pick_points(x, y, self.ray_size, self.ray_size)
+            picked_vertex = renderer.cast_ray(kp.x, kp.y)
             # todo: replace this with an actual position estimation (raycasting) instead of a vertex
-            picked_vertices = vis.pick_points(x - half_ray_size, y - half_ray_size, self.ray_size, self.ray_size)
+            # picked_vertices = renderer.pick_point(x - half_ray_size, y - half_ray_size, self.ray_size, self.ray_size)
 
             if self.debug:
                 pass
                 # vis.add_picked_points(picked_vertices)
 
-            picked_vertices = [picked_vertices[i] for i in range(len(picked_vertices))]
-
-            if len(picked_vertices) == 0:
+            if picked_vertex is None:
                 continue
 
-            positions = np.stack([vertices[vi] for vi in picked_vertices])
-            avg_position = np.mean(positions, axis=0)
-
-            result.append(KeyPoint3(kp.index, avg_position[0], avg_position[1], avg_position[2]))
+            result.append(KeyPoint3(kp.index, picked_vertex.x, picked_vertex.y, picked_vertex.z))
 
         # reset view state
-        self._set_scene_rotation(vis, -view.rotation)
+        renderer.rotate_scene(0, -view.rotation, 0)
+
+        # render picked points
+        if self.debug:
+            meshes = []
+            for p in result:
+                sphere: o3d.geometry.TriangleMesh = o3d.geometry.TriangleMesh.create_sphere(radius=0.01)
+                sphere.paint_uniform_color((0, 1, 0))
+                sphere.translate((p.x, p.y, p.z))
+                meshes.append(sphere)
+            o3d.visualization.draw_geometries([mesh, *meshes], window_name="Picked Points")
 
         # raycast scene from backside if infinity ray is activated
         if view.infinite_ray:
