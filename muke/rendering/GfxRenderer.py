@@ -1,5 +1,5 @@
 import math
-from typing import Optional
+from typing import Optional, Sequence
 
 import cv2
 import numpy as np
@@ -15,7 +15,8 @@ from muke.rendering.BaseRenderer import BaseRenderer
 
 class GfxRenderer(BaseRenderer):
 
-    def __init__(self, width: int, height: int, lights: bool = True):
+    def __init__(self, width: int, height: int,
+                 lights: bool = True, background_color: Optional[Sequence[int]] = None):
         super().__init__(width, height)
 
         # setup canvas and scene
@@ -25,19 +26,12 @@ class GfxRenderer(BaseRenderer):
 
         # setup lights
         if lights:
-            light = gfx.DirectionalLight(gfx.Color("#ffffff"), 1)
-            light.local.x = 0.5
-            light.local.y = 0.5
-            light.local.z = 1.1
-            self.scene.add(light)
+            self._setup_light()
 
-            light = gfx.DirectionalLight(gfx.Color("#ffffff"), 1)
-            light.local.x = -0.5
-            light.local.y = 0.5
-            light.local.z = 1.1
-            self.scene.add(light)
-
-            self.scene.add(gfx.AmbientLight(gfx.Color("#ffffff"), 0.2))
+        # add background
+        if background_color is not None:
+            color = np.array(background_color, np.float32) / 255
+            self._setup_background(color)
 
         # setup camera
         self.camera = gfx.OrthographicCamera(1.1)
@@ -94,6 +88,28 @@ class GfxRenderer(BaseRenderer):
 
         return Vertex(vertex_index, *pos)
 
+    def _setup_light(self):
+        light = gfx.DirectionalLight(gfx.Color("#ffffff"), 1)
+        light.local.x = 0.5
+        light.local.y = 0.5
+        light.local.z = 1.1
+        self.scene.add(light)
+
+        light = gfx.DirectionalLight(gfx.Color("#ffffff"), 1)
+        light.local.x = -0.5
+        light.local.y = 0.5
+        light.local.z = 1.1
+        self.scene.add(light)
+
+        self.scene.add(gfx.AmbientLight(gfx.Color("#ffffff"), 0.2))
+
+    def _setup_background(self, background_color: np.ndarray):
+        geo = gfx.plane_geometry(5, 5, 12, 12)
+        material = gfx.MeshBasicMaterial(color=gfx.Color(background_color))
+        plane = gfx.Mesh(geo, material)
+        plane.local.z = -3
+        self.scene.add(plane)
+
     @staticmethod
     def _open3d_to_gfx_geometry(o3d_mesh: geometry.TriangleMesh) -> gfx.Geometry:
         triangle_uvs = np.array(o3d_mesh.triangle_uvs, dtype=np.float32)
@@ -115,10 +131,14 @@ class GfxRenderer(BaseRenderer):
         if o3d_material.albedo_img is not None:
             texture = np.array(o3d_material.albedo_img)
             texture = texture[::-1, :, :]  # flip texture vertically
+
+            texture = cv2.resize(texture, (512, 512))
+
             texture = texture.astype(np.float32) / 255.0
 
             # todo: fix texture rendering
             tex = gfx.Texture(texture, dim=2)
+            gfx_material.map_interpolation
             gfx_material.map = tex
 
         return gfx_material

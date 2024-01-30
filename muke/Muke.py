@@ -66,7 +66,8 @@ class Muke:
 
         # setup renderer
         # todo: make this configurable
-        renderer: BaseRenderer = GfxRenderer(self.width, self.height)
+        renderer: BaseRenderer = GfxRenderer(self.width, self.height,
+                                             self.light_on, self.background_color)
         renderer.add_geometry(mesh, material)
 
         # detect keypoints
