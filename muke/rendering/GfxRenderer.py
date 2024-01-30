@@ -1,3 +1,4 @@
+import math
 from typing import Optional
 
 import cv2
@@ -14,13 +15,29 @@ from muke.rendering.BaseRenderer import BaseRenderer
 
 class GfxRenderer(BaseRenderer):
 
-    def __init__(self, width: int, height: int):
+    def __init__(self, width: int, height: int, lights: bool = True):
         super().__init__(width, height)
 
         # setup canvas and scene
         self.canvas = WgpuCanvas(size=(self.width, self.height), pixel_ratio=1)
         self.renderer = gfx.renderers.WgpuRenderer(self.canvas)
         self.scene = gfx.Scene()
+
+        # setup lights
+        if lights:
+            light = gfx.DirectionalLight(gfx.Color("#ffffff"), 1)
+            light.local.x = 0.5
+            light.local.y = 0.5
+            light.local.z = 1.1
+            self.scene.add(light)
+
+            light = gfx.DirectionalLight(gfx.Color("#ffffff"), 1)
+            light.local.x = -0.5
+            light.local.y = 0.5
+            light.local.z = 1.1
+            self.scene.add(light)
+
+            self.scene.add(gfx.AmbientLight(gfx.Color("#ffffff"), 0.2))
 
         # setup camera
         self.camera = gfx.OrthographicCamera(1.1)
@@ -54,7 +71,7 @@ class GfxRenderer(BaseRenderer):
         return cv2.cvtColor(image_rgba, cv2.COLOR_BGRA2BGR)
 
     def rotate_scene(self, x: float, y: float, z: float):
-        rot = la.quat_from_euler((x, y, z), order="XYZ")
+        rot = la.quat_from_euler((math.radians(x), math.radians(y), math.radians(z)), order="XYZ")
         self._gfx_mesh.local.rotation = la.quat_mul(rot, self._gfx_mesh.local.rotation)
 
     def cast_ray(self, x: float, y: float) -> Optional[Vertex]:
@@ -92,8 +109,8 @@ class GfxRenderer(BaseRenderer):
 
     @staticmethod
     def _open3d_to_gfx_material(o3d_material: rendering.MaterialRecord) -> gfx.Material:
-        gfx_material = gfx.MeshBasicMaterial()
-        gfx_material.flat_shading = True
+        gfx_material = gfx.MeshPhongMaterial()
+        gfx_material.flat_shading = False
 
         if o3d_material.albedo_img is not None:
             texture = np.array(o3d_material.albedo_img)
