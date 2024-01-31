@@ -142,7 +142,7 @@ class Muke:
             preview_image = image_np.copy()
             preview_image = cv2.cvtColor(preview_image, cv2.COLOR_RGB2BGR)
             clean_image = preview_image.copy()
-            self._annotate_keypoints_2d(preview_image, keypoints, weight=2)
+            self._annotate_keypoints_2d(preview_image, keypoints, weight=2, color=(0, 0, 255))
             combined = np.hstack((clean_image, preview_image))
             cv2.imshow(f"{view.name}: 2D Key Points", combined)
             cv2.waitKey(0)
@@ -153,20 +153,13 @@ class Muke:
         result = []
 
         for kp in keypoints:
-            half_ray_size = self.ray_size * 0.5
-
             picked_vertex = renderer.cast_ray(kp.x, kp.y)
-            # todo: replace this with an actual position estimation (raycasting) instead of a vertex
-            # picked_vertices = renderer.pick_point(x - half_ray_size, y - half_ray_size, self.ray_size, self.ray_size)
-
-            if self.debug:
-                pass
-                # vis.add_picked_points(picked_vertices)
 
             if picked_vertex is None:
                 continue
 
-            result.append(KeyPoint3(kp.index, picked_vertex.x, picked_vertex.y, picked_vertex.z))
+            result.append(KeyPoint3(kp.index, picked_vertex.x, picked_vertex.y, picked_vertex.z,
+                                    vertex_index=picked_vertex.index))
 
         # reset view state
         renderer.rotate_scene(0, -view.rotation, 0)
@@ -209,12 +202,25 @@ class Muke:
             hit_uvs = ans["primitive_uvs"].numpy()
             triangles = np.asarray(mesh.triangles)
 
+            bad_index = pow(2, 32) - 1  # 4294967295
+            bad_keypoint_ids = []  # keypoints to remove because they do not hit any triangle
+
             back_positions = []
             for i in range(len(hit_triangles)):
+                triangle_index = hit_triangles[i]
+
+                if triangle_index == bad_index:
+                    bad_keypoint_ids.append(i)
+                    continue
+
                 triangle = triangles[hit_triangles[i]]
                 barycenter = np.average(np.take(vertices, triangle, axis=0), axis=0)
                 # todo: add hit uv's (but how is it rotated?)
                 back_positions.append(barycenter)
+
+            # remove bad keypoints
+            for i in bad_keypoint_ids[::-1]:
+                result.pop(i)
 
             # calculate new mean positions
             lines = Lines()
