@@ -141,8 +141,10 @@ class Muke:
         if self.debug:
             preview_image = image_np.copy()
             preview_image = cv2.cvtColor(preview_image, cv2.COLOR_RGB2BGR)
+            clean_image = preview_image.copy()
             self._annotate_keypoints_2d(preview_image, keypoints, weight=2)
-            cv2.imshow(f"{view.name}: 2D Key Points", preview_image)
+            combined = np.hstack((clean_image, preview_image))
+            cv2.imshow(f"{view.name}: 2D Key Points", combined)
             cv2.waitKey(0)
             cv2.destroyAllWindows()
 
