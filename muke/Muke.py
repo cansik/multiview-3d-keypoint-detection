@@ -32,7 +32,8 @@ class Muke:
         self.camera_zoom: float = 0.55
         self.camera_fov: float = -90  # by default orthographic
 
-        self.background_color: Sequence[int] = [255, 255, 255]
+        # background color r, g, b [0-1]
+        self.background_color: Sequence[float] = [1, 1, 1]
 
         self.mesh_shade_option: Optional[o3d.visualization.MeshShadeOption] = None
         self.mesh_color_option: Optional[o3d.visualization.MeshColorOption] = None

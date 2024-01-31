@@ -16,7 +16,7 @@ from muke.rendering.BaseRenderer import BaseRenderer
 class GfxRenderer(BaseRenderer):
 
     def __init__(self, width: int, height: int,
-                 lights: bool = True, background_color: Optional[Sequence[int]] = None):
+                 lights: bool = True, background_color: Optional[Sequence[float]] = None):
         super().__init__(width, height)
 
         # setup canvas and scene
@@ -30,7 +30,7 @@ class GfxRenderer(BaseRenderer):
 
         # add background
         if background_color is not None:
-            color = np.array(background_color, np.float32) / 255
+            color = np.array(background_color, np.float32)
             self._setup_background(color)
 
         # setup camera
