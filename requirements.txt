@@ -6,5 +6,8 @@ tqdm
 
 scipy
 
+pygfx~=0.1.17
+trimesh~=4.1.0
+
 # pose estimation
 mediapipe

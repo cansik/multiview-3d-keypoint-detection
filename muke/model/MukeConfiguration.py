@@ -55,7 +55,7 @@ class MukeConfiguration(object):
         MukeConfiguration._set_value_if_available(data, config, "generator", method=lambda x: MukeGenerators[x])
         MukeConfiguration._set_value_if_available(data, config, "resolution")
 
-        if data.infinite_ray:
+        if hasattr(data, "infinite_ray"):
             config.views[0].infinite_ray = True
 
     @staticmethod
