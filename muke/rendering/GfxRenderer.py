@@ -93,6 +93,10 @@ class GfxRenderer(BaseRenderer):
         face_index = info["face_index"]
 
         sub_index = np.argmax(coords)
+
+        # todo: filter point picked which are not on mesh
+        # maybe use info["rgba"] to detect background color
+
         vertex_index = int(wobject.geometry.indices.data[face_index][sub_index])
         pos = wobject.geometry.positions.data[vertex_index]
 
