@@ -162,7 +162,7 @@ class CustomDetector(BaseDetector):
 ```
 
 ### Renderer
-The current version uses [Open3D](https://github.com/isl-org/Open3D) for rendering and raycasting. Initially, [trimesh](https://github.com/mikedh/trimesh) was used, which is archived in the [trimesh-renderer branch](https://github.com/cansik/multiview-3d-keypoint-detection/tree/trimesh-renderer). In the future it would be interesting to use [pygfx](https://github.com/pygfx/pygfx) as a lightweight alternative to Open3D.
+The current version uses [pygfx](https://github.com/pygfx/pygfx) as lightweight and offscreen renderer, [trimesh](https://github.com/mikedh/trimesh) for model loading into pygfx and [Open3D](https://github.com/isl-org/Open3D) for raycasting. Initially, [trimesh](https://github.com/mikedh/trimesh) was used for everything, which is archived in the [trimesh-renderer branch](https://github.com/cansik/multiview-3d-keypoint-detection/tree/trimesh-renderer). Open3D was also once used for everything, but has been archived in version `0.2.x` and the [open3d-renderer branch](https://github.com/cansik/multiview-3d-keypoint-detection/tree/open3d-renderer).
 
 ### About
 MIT License - Copyright (c) 2024 Florian Bruggisser
