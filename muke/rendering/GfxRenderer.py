@@ -1,3 +1,4 @@
+import logging
 import math
 import tempfile
 from pathlib import Path
@@ -71,6 +72,8 @@ class GfxRenderer(BaseRenderer):
         self.scene.add(self._gfx_mesh)
 
     def render(self) -> np.ndarray:
+        self.canvas.request_draw(lambda: self.renderer.render(self.scene, self.camera))
+
         image_rgba = np.asarray(self.canvas.draw())
         return cv2.cvtColor(image_rgba, cv2.COLOR_BGRA2BGR)
 
@@ -168,12 +171,15 @@ class GfxRenderer(BaseRenderer):
 
         if o3d_material.albedo_img is not None:
             texture = np.array(o3d_material.albedo_img)
-            # texture = texture[::-1, :, :]  # flip texture vertically
 
-            texture = texture.astype(np.float32) / 255.0
+            logging.info(f"texture input format: {texture.shape} ({texture.dtype})")
+
+            # texture = texture[::-1, :, :]  # flip texture vertically
+            # texture = texture.astype(np.float32) / 255.0
 
             # todo: fix texture rendering
-            tex = gfx.Texture(texture, dim=2)
+            # format=wgpu.TextureFormat.
+            tex = gfx.Texture(texture, dim=2, format="3xu1")
             gfx_material.map_interpolation = "linear"
             gfx_material.side = "FRONT"
             gfx_material.map = tex
