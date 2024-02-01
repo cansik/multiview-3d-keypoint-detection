@@ -4,7 +4,7 @@ from typing import List, Sequence, Optional
 import cv2
 import numpy as np
 import open3d as o3d
-from open3d.cpu.pybind.visualization import rendering
+from open3d.visualization import rendering
 from scipy.spatial import distance
 
 from muke.Lines import Lines

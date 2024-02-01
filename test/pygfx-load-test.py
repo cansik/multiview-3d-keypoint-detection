@@ -2,8 +2,8 @@ import numpy as np
 import open3d
 import pygfx as gfx
 import trimesh
-from open3d.cpu.pybind import geometry
-from open3d.cpu.pybind.visualization import rendering
+from open3d import geometry
+from open3d.visualization import rendering
 from trimesh import Trimesh
 
 from muke.rendering.GfxRenderer import GfxRenderer

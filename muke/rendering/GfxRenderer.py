@@ -9,9 +9,9 @@ import numpy as np
 import pygfx as gfx
 import pylinalg as la
 import trimesh
-from open3d.cpu.pybind import geometry
-from open3d.cpu.pybind import io
-from open3d.cpu.pybind.visualization import rendering
+from open3d import geometry
+from open3d import io
+from open3d.visualization import rendering
 from trimesh import Trimesh
 from wgpu.gui import WgpuCanvasBase
 from wgpu.gui.offscreen import WgpuCanvas

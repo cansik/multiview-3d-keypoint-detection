@@ -1,8 +1,8 @@
 import open3d
 import pygfx as gfx
 import trimesh
-from open3d.cpu.pybind import geometry
-from open3d.cpu.pybind.visualization import rendering
+from open3d import geometry
+from open3d.visualization import rendering
 from trimesh import Trimesh
 
 a: Trimesh = trimesh.load("assets/woman-old2-small/woman-old2.obj")

@@ -2,8 +2,8 @@ from abc import ABC, abstractmethod
 from typing import Optional
 
 import numpy as np
-from open3d.cpu.pybind import geometry
-from open3d.cpu.pybind.visualization import rendering
+from open3d import geometry
+from open3d.visualization import rendering
 
 from muke.model.Vertex import Vertex
 
