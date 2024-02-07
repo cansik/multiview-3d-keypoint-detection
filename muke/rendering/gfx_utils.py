@@ -13,8 +13,12 @@ def open3d_to_gfx_geometry(o3d_mesh: geometry.TriangleMesh) -> gfx.Geometry:
     # vertex_colors = np.array(o3d_mesh.vertex_colors, dtype=np.float32)
     vertices = np.array(o3d_mesh.vertices, dtype=np.float32)
 
-    vertex_uvs = np.zeros((len(vertices), 2), np.float32)
-    vertex_uvs[triangles.flat] = triangle_uvs
+    # calculate vertex uvs
+    if len(triangle_uvs) > 0:
+        vertex_uvs = np.zeros((len(vertices), 2), np.float32)
+        vertex_uvs[triangles.flat] = triangle_uvs
+    else:
+        vertex_uvs = np.zeros((0, 2), np.float32)
 
     vertex_uvs_wgpu = (vertex_uvs * np.array([1, -1]) + np.array([0, 1])).astype(np.float32)  # uv.y = 1 - uv.y
 
