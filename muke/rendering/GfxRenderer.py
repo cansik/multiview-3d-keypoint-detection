@@ -1,22 +1,17 @@
-import logging
 import math
-import tempfile
-from pathlib import Path
 from typing import Optional, Sequence
 
 import cv2
 import numpy as np
 import pygfx as gfx
 import pylinalg as la
-import trimesh
 from open3d import geometry
-from open3d import io
 from open3d.visualization import rendering
-from trimesh import Trimesh
 from wgpu.gui import WgpuCanvasBase
 from wgpu.gui.offscreen import WgpuCanvas
 
 from muke.model.Vertex import Vertex
+from muke.rendering import gfx_utils
 from muke.rendering.BaseRenderer import BaseRenderer
 
 
@@ -54,10 +49,10 @@ class GfxRenderer(BaseRenderer):
         self.canvas.request_draw(lambda: self.renderer.render(self.scene, self.camera))
 
     def add_geometry(self, mesh: geometry.TriangleMesh, material: Optional[rendering.MaterialRecord]):
-        gfx_geometry = self._open3d_to_gfx_geometry(mesh)
+        gfx_geometry = gfx_utils.open3d_to_gfx_geometry(mesh)
 
         if material is not None:
-            gfx_material = self._open3d_to_gfx_material(material)
+            gfx_material = gfx_utils.open3d_to_gfx_material(material)
         else:
             gfx_material = gfx.MeshBasicMaterial()
 
@@ -127,61 +122,3 @@ class GfxRenderer(BaseRenderer):
         plane = gfx.Mesh(geo, material)
         plane.local.z = -3
         self.scene.add(plane)
-
-    @staticmethod
-    def _open3d_to_gfx_geometry(o3d_mesh: geometry.TriangleMesh) -> gfx.Geometry:
-        # workaround with trimesh
-        with tempfile.TemporaryDirectory() as temp_dir:
-            temp_file_name = Path(temp_dir).joinpath("tmp.obj")
-            io.write_triangle_mesh(str(temp_file_name), o3d_mesh)
-            t_mesh: Trimesh = trimesh.load_mesh(str(temp_file_name))
-            t_geo = gfx.geometry_from_trimesh(t_mesh)
-            return t_geo
-
-        # todo: implement mesh loading with correct indices of indexes
-        triangle_uvs = np.array(o3d_mesh.triangle_uvs, dtype=np.float32)
-        triangles = np.array(o3d_mesh.triangles, dtype=np.uint32)
-        # triangle_normals = np.array(o3d_mesh.triangle_normals, dtype=np.float32)
-
-        vertex_normals = np.array(o3d_mesh.vertex_normals, dtype=np.float32)
-        # vertex_colors = np.array(o3d_mesh.vertex_colors, dtype=np.float32)
-        vertices = np.array(o3d_mesh.vertices, dtype=np.float32)
-
-        # fix triangle uvs
-        # triangles = triangles[:, ::-1]
-        # triangle_uvs = triangle_uvs.reshape((-1, 3, 2))
-        # triangle_uvs = triangle_uvs[:, ::-1, :]
-        # triangle_uvs = np.roll(triangle_uvs, 2, axis=1)
-
-        new_order = [1, 0, 2]
-        # triangle_uvs = triangle_uvs[:, new_order, :]
-
-        # triangle_uvs = triangle_uvs.reshape(-1, 2)
-
-        triangle_uvs_wgpu = (triangle_uvs * np.array([1, -1]) + np.array([0, 1])).astype(np.float32)  # uv.y = 1 - uv.y
-
-        return gfx.Geometry(
-            indices=triangles, positions=vertices, normals=vertex_normals, texcoords=triangle_uvs_wgpu
-        )
-
-    @staticmethod
-    def _open3d_to_gfx_material(o3d_material: rendering.MaterialRecord) -> gfx.Material:
-        gfx_material = gfx.MeshPhongMaterial()
-        gfx_material.flat_shading = False
-
-        if o3d_material.albedo_img is not None:
-            texture = np.array(o3d_material.albedo_img)
-
-            logging.info(f"texture input format: {texture.shape} ({texture.dtype})")
-
-            # texture = texture[::-1, :, :]  # flip texture vertically
-            # texture = texture.astype(np.float32) / 255.0
-
-            # todo: fix texture rendering
-            # format=wgpu.TextureFormat.
-            tex = gfx.Texture(texture, dim=2, format="3xu1")
-            gfx_material.map_interpolation = "linear"
-            gfx_material.side = "FRONT"
-            gfx_material.map = tex
-
-        return gfx_material
