@@ -113,8 +113,8 @@ class Muke:
             if self.debug:
                 logging.info("[%02d]:\t%d\t(error: %.4f)" % (index, vertex_index, delta))
 
-        logging.info("estimated %d key-points (error total: %.4f avg: %.4f)"
-                     % (len(keypoints), summed_error, summed_error / max(1.0, len(keypoints))))
+        logging.debug("estimated %d key-points (error total: %.4f avg: %.4f)"
+                      % (len(keypoints), summed_error, summed_error / max(1.0, len(keypoints))))
 
         if self.display:
             self._annotate_keypoints_3d("Result", mesh, keypoints)
