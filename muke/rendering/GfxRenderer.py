@@ -54,7 +54,7 @@ class GfxRenderer(BaseRenderer):
         if material is not None:
             gfx_material = gfx_utils.open3d_to_gfx_material(material)
         else:
-            gfx_material = gfx.MeshBasicMaterial()
+            gfx_material = gfx_utils.gfx_material_from_mesh(mesh)
 
         self._gfx_mesh = gfx.Mesh(gfx_geometry, gfx_material)
 
