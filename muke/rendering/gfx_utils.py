@@ -56,5 +56,5 @@ def gfx_material_from_mesh(o3d_mesh: geometry.TriangleMesh) -> gfx.Material:
 
 
 def create_gfx_texture(image: np.ndarray) -> gfx.Texture:
-    texture = image.astype("float32") / 255
-    return gfx.Texture(texture, dim=2, format="3xf4")
+    texture = image
+    return gfx.Texture(texture, dim=2, format="3xu1")
