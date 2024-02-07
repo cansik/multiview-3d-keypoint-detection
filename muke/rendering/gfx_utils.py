@@ -12,17 +12,24 @@ def open3d_to_gfx_geometry(o3d_mesh: geometry.TriangleMesh) -> gfx.Geometry:
     vertex_normals = np.array(o3d_mesh.vertex_normals, dtype=np.float32)
     vertices = np.array(o3d_mesh.vertices, dtype=np.float32)
 
+    mesh_inputs = {
+        "indices": triangles,
+        "positions": vertices,
+    }
+
+    # remove vertex normals if not there
+    if len(vertex_normals) > 0:
+        mesh_inputs["normals"] = vertex_normals
+
     # calculate vertex uvs
     if len(triangle_uvs) > 0:
         vertex_uvs = np.zeros((len(vertices), 2), np.float32)
         vertex_uvs[triangles.flat] = triangle_uvs
-    else:
-        vertex_uvs = np.zeros((0, 2), np.float32)
 
-    vertex_uvs_wgpu = (vertex_uvs * np.array([1, -1]) + np.array([0, 1])).astype(np.float32)  # uv.y = 1 - uv.y
+        vertex_uvs_wgpu = (vertex_uvs * np.array([1, -1]) + np.array([0, 1])).astype(np.float32)  # uv.y = 1 - uv.y
+        mesh_inputs["texcoords"] = vertex_uvs_wgpu
 
-    return gfx.Geometry(indices=triangles, positions=vertices,
-                        normals=vertex_normals, texcoords=vertex_uvs_wgpu)
+    return gfx.Geometry(**mesh_inputs)
 
 
 def open3d_to_gfx_material(o3d_material: rendering.MaterialRecord) -> gfx.Material:
