@@ -130,6 +130,13 @@ class Muke:
         # render
         image_np = renderer.render()
 
+        if self.debug:
+            preview_image = image_np.copy()
+            preview_image = cv2.cvtColor(preview_image, cv2.COLOR_RGB2BGR)
+            cv2.imshow(f"{view.name}: Rendering", preview_image)
+            cv2.waitKey(0)
+            cv2.destroyAllWindows()
+
         # detect keypoints
         keypoints = self.detector.detect(image_np)
 

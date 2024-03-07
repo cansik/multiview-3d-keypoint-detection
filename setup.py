@@ -15,7 +15,7 @@ long_description = (current_dir / "README.md").read_text()
 
 setup(
     name=NAME,
-    version="0.3.5.2",
+    version="0.3.5.3",
     packages=required_packages,
     url="https://github.com/cansik/multiview-3d-keypoint-detection",
     license="MIT License",
