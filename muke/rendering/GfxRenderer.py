@@ -68,7 +68,7 @@ class GfxRenderer(BaseRenderer):
         # center
         bbox = np.array(self._gfx_mesh.get_world_bounding_box(), np.float32)
         center = (bbox[0] + bbox[1]) / 2.0  # Calculate the center of the mesh
-        self._gfx_mesh.local.position += center * -1
+        self._gfx_mesh.local.position = self._gfx_mesh.local.position + center * -1
 
         self.scene.add(self._gfx_mesh)
 
