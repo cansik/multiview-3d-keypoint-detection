@@ -10,4 +10,4 @@ pygfx~=0.1.18.0
 trimesh~=4.1.0
 
 # pose estimation
-mediapipe
+mediapipe-numpy2~=0.10.21
