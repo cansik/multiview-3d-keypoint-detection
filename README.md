@@ -1,34 +1,54 @@
 # Multiview 3D Keypoint Detection (Muke) [![PyPI](https://img.shields.io/pypi/v/muke)](https://pypi.org/project/muke/)
-A simple approach to 3D keypoint detection using 2D estimation methods and multiview rendering, based on the blender project for [automatic keypoint retopology](https://github.com/cansik/auto-keypoint-retopology).
 
-Basically, the 3D model is rendered from different angles (views) and a 2D keypoint detection is performed. For each detected keypoint, a ray-cast is performed to determine the intersection point with the mesh surface. In the end, all intersection points of the different views are combined to calculate the current 3D position of the keypoint within the mesh. It is possible to define view-dependent keypoint indices to extract only the points that are visible in the current rendering. Muke returns a list of 3D keypoints containing both the position and the nearest vertex index.
+**Muke** is a robust framework for extracting 3D keypoints from meshes using multiview 2D estimation and geometric projection. It is based on the concept of [automatic keypoint retopology](https://github.com/cansik/auto-keypoint-retopology).
 
-![Visualisation](documentation/visualisation.png)
+![Muke Overview](documentation/overview-bright.png)
+*Muke Process: Ray-casting from multiple views to determine surface points.*
 
-*Muke Process*
+### Methodology
 
-Direct 3D keypoint recognition using mesh data would be more accurate, but it is still difficult to train 3D models or find already trained weights for them. By using 2D recognition alone, it is possible to use the entire zoo of keypoint image recognition models. Muke comes with a built-in [MediaPipe face](https://google.github.io/mediapipe/solutions/face_mesh.html) and [pose](https://google.github.io/mediapipe/solutions/pose.html) detector, but can be extended with any other 2D keypoint detection framework.
+The keypoint extraction pipeline leverages the robustness of 2D detection models to infer 3D geometry. The process is defined by the following stages:
+
+1.  **Multiview Rendering**: The target 3D mesh is rendered from a series of calibrated camera viewpoints.
+2.  **2D Feature Regression**: A 2D keypoint detector is applied to each rendered view to regress landmark coordinates in the image plane.
+3.  **Inverse Projection (Ray-Casting)**: For every detected landmark, a ray is cast from the camera center through the corresponding pixel coordinates into the 3D scene.
+4.  **Surface Intersection**: The algorithm computes the intersection of these rays with the mesh topology.
+5.  **Spatial Aggregation**: Intersection points from disparate views are clustered and averaged to resolve the final 3D position and nearest vertex index.
+
+![Architecture Diagram](documentation/process-light.png)
+*Overview of the detection pipeline.*
+
+Direct 3D keypoint recognition on mesh data often requires complex training pipelines and limited datasets. By utilizing 2D recognition, Muke taps into the extensive "zoo" of pre-trained image recognition models. The library includes built-in support for [MediaPipe Face](https://ai.google.dev/edge/mediapipe/solutions/vision/face_detector) and [Pose Landmark](https://ai.google.dev/edge/mediapipe/solutions/vision/pose_landmarker), and is designed to be extensible for other frameworks.
 
 ![Head Example](documentation/head.png)
-
 *3D Facial Landmark Estimation (Human Head by [VistaPrime](https://sketchfab.com/3d-models/human-head-f46d952886ae4a8c8851341b810bba43) [CC Attribution](https://creativecommons.org/licenses/by/4.0/))*
 
-The project was originally implemented to have a simple and fast solution for 3D keypoints detection for retopology purposes. However, it can also be used for any other application where 3D keypoints are needed, such as rigging, animation, etc.
+### Applications
+
+Originally developed for automatic retopology, Muke is suitable for various applications requiring semantic 3D keypoints, including:
+*   **Auto-Rigging**: Automating skeleton placement based on surface features.
+*   **Animation**: Driving blendshapes or bone deformations.
+*   **Registration**: Aligning meshes based on semantic landmarks.
+
+---
 
 ### Installation
 
-To install the package use the following pip command:
+Install the package via pip:
 
 ```bash
 pip install muke
 ```
 
 ### Usage
-Muke can be used as a command line tool to extract the keypoints in a specific format (e.g. [Wrap3](https://www.russian3dscanner.com/)). For that a configuration has to be created which defines the detection parameters as well as the rendering views.
+
+Muke can be executed as a command-line tool to generate keypoint data in formats such as [Wrap3](https://www.russian3dscanner.com/).
 
 #### Configuration
 
-Example configuration:
+Create a JSON configuration file to define the detector, resolution, and rendering views.
+
+**Example `config.json`:**
 
 ```json
 {
@@ -40,17 +60,14 @@ Example configuration:
     {
       "name": "frontal",
       "rotation": 0,
-      "keypoints": [
-        4,
-        76,
-        306
-      ]
+      "keypoints": [4, 76, 306]
     }
   ]
 }
 ```
 
-To select a range of keypoint indices, it is possible to define a `start` and `end` (included) index. It is also possible to skip certain indices in that range. Here an example on how to create a range (`skip` is optional):
+**Keypoint Ranges:**
+You can define ranges with optional skips:
 
 ```json
 {
@@ -61,112 +78,96 @@ To select a range of keypoint indices, it is possible to define a `start` and `e
 ```
 
 #### Infinite Ray
-Per view it is possible to set the `infinite-ray` value to `True` to shoot a ray through the mesh to infinity. Every intersection point with the mesh is used as a point to calculate the average center of the keypoint inside the mesh.
+Setting `"infinite-ray": true` allows the ray to traverse the entire mesh. The final keypoint is calculated as the average center of all intersection points, which is useful for estimating internal volume centers.
 
-#### Demo
-Quickly try out Muke by using the following commands.
+#### Quick Start
+
+Run Muke on provided assets:
 
 ```bash
+# Basic pose detection
 python -m muke assets/person.ply --display --resolution 1024
-```
 
-```bash
+# Face detection
 python -m muke assets/human_head.obj --display --resolution 1024 --detector media-pipe-face
-```
 
-```bash
+# Using a configuration file
 python -m muke assets/human_head.obj --config config/media-pipe-face.json --display
 ```
 
-#### Help
+#### CLI Arguments
 
-```bash
+```text
 usage: muke [-h] [--detector {media-pipe-pose,media-pipe-face}]
             [--resolution RESOLUTION] [--infinite-ray] [--generator {wrap3}]
             [--config CONFIG] [--load-raw] [--display] [--debug]
             input
-
-Detects keypoint locations in a 3d model.
-
-positional arguments:
-  input                 Input mesh to process.
-
-optional arguments:
-  -h, --help            show this help message and exit
-  --detector {media-pipe-pose,media-pipe-face}
-                        Detection method for 2d keypoint detection (default:
-                        media-pipe-pose).
-  --resolution RESOLUTION
-                        Render resolution for each view pass (default: 512).
-  --infinite-ray        Send ray through mesh to infinity and use average of
-                        intersections (default: False)
-  --generator {wrap3}   Generator methods for output generation (default:
-                        wrap3).
-  --config CONFIG       Path to the configuration JSON file.
-  --load-raw            Load mesh raw without post-processing (default: False)
-  --display             Shows result rendering with keypoints (default: False)
-  --debug               Shows debug frames and information (default: False)
 ```
 
-### Library
-It is also possible to use Muke as a library to detect keypoints on an existing 3d mesh.
+### Development
+
+Muke is designed to be integrated into Python pipelines.
+
+#### Library Usage
 
 ```python
 import open3d as o3d
-
 from muke.Muke import Muke
 from muke.detector.MediaPipePoseDetector import MediaPipePoseDetector
 from muke.model.DetectionView import DetectionView
 
-# load mesh from filesystem
+# 1. Load mesh
 mesh = o3d.io.read_triangle_mesh("assets/person.ply")
 
-# define rendered views
-keypoint_indexes = {28, 27, 26, 25, 24, 23, 12, 11, 14, 13, 16, 15, 5, 2, 0}
+# 2. Define views and keypoints of interest
+keypoint_indexes = {0, 2, 5, 11, 12, 13, 14, 15, 16, 23, 24, 25, 26, 27, 28}
 views = [
     DetectionView("front", 0, keypoint_indexes),
     DetectionView("back", 180, keypoint_indexes),
 ]
 
-# detect keypoints
+# 3. Detect
 with Muke(MediaPipePoseDetector()) as m:
     result = m.detect(mesh, views)
 
-# present results
+# 4. Process results
 for kp in result:
     print(f"KP {kp.index}: {kp.x:.2f} {kp.y:.2f} {kp.z:.2f}")
 ```
 
-### Detectors
-It is possible to implement custom keypoint detectors. The custom detector has to implement the `BaseDetector` interface as shown in the following example.
+#### Custom Detectors
+
+Implement the `BaseDetector` interface to add support for new models.
 
 ```python
 import numpy as np
-
 from muke.detector.BaseDetector import BaseDetector
 from muke.detector.KeyPoint2 import KeyPoint2
 
-
 class CustomDetector(BaseDetector):
     def setup(self):
-        # todo: initialize the custom detector
+        # Initialize model
         pass
 
-    def detect(self, image: np.ndarray) -> [KeyPoint2]:
-        # todo: implement the custom 2d keypoint detection 
+    def detect(self, image: np.ndarray) -> list[KeyPoint2]:
+        # Perform inference and return 2D keypoints
         pass
 
     def release(self):
-        # todo: clean up allocated resources
+        # Cleanup
         pass
 ```
 
-### Renderer
-The current version uses [pygfx](https://github.com/pygfx/pygfx) as lightweight and offscreen renderer, [trimesh](https://github.com/mikedh/trimesh) for model loading into pygfx and [Open3D](https://github.com/isl-org/Open3D) for raycasting. Initially, [trimesh](https://github.com/mikedh/trimesh) was used for everything, which is archived in the [trimesh-renderer branch](https://github.com/cansik/multiview-3d-keypoint-detection/tree/trimesh-renderer). Open3D was also once used for everything, but has been archived in version `0.2.x` and the [open3d-renderer branch](https://github.com/cansik/multiview-3d-keypoint-detection/tree/open3d-renderer).
+### Technical Details
+
+The rendering pipeline utilizes [pygfx](https://github.com/pygfx/pygfx) for lightweight offscreen rendering. Mesh loading is handled by [trimesh](https://github.com/mikedh/trimesh), and [Open3D](https://github.com/isl-org/Open3D) performs the ray-casting operations.
+
+*   **Legacy Branches**:
+    *   `trimesh-renderer`: Pure trimesh implementation.
+    *   `open3d-renderer`: Pure Open3D implementation (archived).
 
 ## Credits
 
 Developed at the [Immersive Arts Space](https://blog.zhdk.ch/immersivearts/), [Zurich University of the Arts (ZHdK)](https://www.zhdk.ch/).
 
 Copyright © Zurich University of the Arts (ZHdK).
-
